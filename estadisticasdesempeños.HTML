@@ -1,0 +1,3442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Estadísticas Académicas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header Styles */
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .logo-container {
+            width: 100px;
+            height: 100px;
+            border: 3px solid #667eea;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .logo-container:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .logo-container img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+
+        .header-info {
+            flex: 1;
+        }
+
+        .school-name {
+            font-size: 32px;
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .school-subtitle {
+            color: #666;
+            font-size: 16px;
+        }
+
+        /* Upload Section */
+        .upload-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .file-input-container {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .file-input-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .school-info-inputs {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .school-info-inputs input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .school-info-inputs input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Tabs */
+        .tabs-container {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 3px solid #667eea;
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .tab:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .tab-content {
+            padding: 30px;
+            min-height: 500px;
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Dashboard Cards */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 25px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.3);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+        }
+
+        .stat-card h3 {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-detail {
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        /* Filters */
+        .filters-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 180px;
+        }
+
+        .filter-group label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+        tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+            transform: scale(1.01);
+        }
+
+        .desempeno-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+
+        .desempeno-bajo {
+            background: #ff4757;
+            color: white;
+        }
+
+        .desempeno-basico, .desempeno-básico {
+            background: #ffa502;
+            color: white;
+        }
+
+        .desempeno-alto {
+            background: #3742fa;
+            color: white;
+        }
+
+        .desempeno-superior {
+            background: #2ed573;
+            color: white;
+        }
+
+        /* Charts Container */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        /* Export Buttons */
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #2ed573 0%, #00b894 100%);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #00d2d3 0%, #54a0ff 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 72px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        .empty-state p {
+            font-size: 16px;
+            color: #999;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .school-name {
+                font-size: 24px;
+            }
+            
+            .tabs {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+            }
+            
+            .tabs,
+            .filters-container,
+            .export-buttons,
+            .upload-section {
+                display: none;
+            }
+            
+            .tab-content {
+                padding: 0;
+            }
+            
+            .header {
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+        }
+
+        // Style for student summary cards
+        .student-summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            border-left: 4px solid #ff4757;
+            transition: all 0.3s ease;
+        }
+
+        .student-summary-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+        }
+
+        .student-summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .student-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .student-group {
+            font-size: 14px;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        .bajo-count-badge {
+            background: #ff4757;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .subjects-bajo-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .subject-bajo-chip {
+            background: rgba(255, 71, 87, 0.1);
+            color: #ff4757;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .trimester-label {
+            font-size: 11px;
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            padding: 2px 6px;
+            border-radius: 8px;
+            margin-left: 5px;
+        }
+
+        .summary-stats-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .summary-stat-item {
+            text-align: center;
+        }
+
+        .summary-stat-value {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .summary-stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b449b 100%);
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo-container" onclick="document.getElementById('logoInput').click()">
+                <img id="schoolLogo" src="" alt="📚" style="display:none;">
+                <span id="logoPlaceholder">📚</span>
+                <input type="file" id="logoInput" accept="image/*" style="display:none;" onchange="loadLogo(event)">
+            </div>
+            <div class="header-info">
+                <h1 class="school-name" id="schoolNameDisplay">INSTITUCIÓN EDUCATIVA</h1>
+                <p class="school-subtitle">Sistema de Análisis Estadístico Académico</p>
+            </div>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <h3 style="margin-bottom: 15px; color: #667eea;">Configuración y Carga de Datos</h3>
+            <div class="school-info-inputs">
+                <input type="text" id="schoolNameInput" placeholder="Nombre del Colegio" onchange="updateSchoolName()">
+                <input type="text" id="yearInput" placeholder="Año Escolar (ej: 2025)" onchange="updateSchoolYear()">
+            </div>
+            <div class="file-input-container" style="margin-top: 15px;">
+                <div class="file-input-wrapper">
+                    <input type="file" id="file1" accept=".xls,.xlsx" onchange="handleFileUpload(event, 1)">
+                    <label for="file1" class="file-input-label">📊 Cargar Trimestre 1</label>
+                </div>
+                <div class="file-input-wrapper">
+                    <input type="file" id="file2" accept=".xls,.xlsx" onchange="handleFileUpload(event, 2)">
+                    <label for="file2" class="file-input-label">📊 Cargar Trimestre 2</label>
+                </div>
+                <div class="file-input-wrapper">
+                    <input type="file" id="file3" accept=".xls,.xlsx" onchange="handleFileUpload(event, 3)">
+                    <label for="file3" class="file-input-label">📊 Cargar Trimestre 3</label>
+                </div>
+                <div class="file-input-wrapper">
+                    <input type="file" id="file4" accept=".xls,.xlsx" onchange="handleFileUpload(event, 4)">
+                    <label for="file4" class="file-input-label">📊 Cargar Trimestre 4</label>
+                </div>
+                <button class="btn btn-info" onclick="saveAnalysis()">💾 Guardar Análisis</button>
+                <button class="btn btn-primary" onclick="loadAnalysis()">📂 Cargar Análisis</button>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('dashboard')">🏠 Dashboard</button>
+                <button class="tab" onclick="switchTab('estudiantes-bajo')">⚠️ Estudiantes con Bajo</button>
+                <button class="tab" onclick="switchTab('resumen-estudiante')">👤 Resumen por Estudiante</button>
+                <button class="tab" onclick="switchTab('estadisticas')">📊 Estadísticas por Período</button>
+                <button class="tab" onclick="switchTab('analisis-avanzado')">🔍 Análisis Avanzado</button>
+                <button class="tab" onclick="switchTab('reportes-grupo')">👥 Reportes por Grupo</button>
+            </div>
+
+            <div class="tab-content">
+                <!-- Dashboard Tab -->
+                <div id="dashboard" class="tab-pane active">
+                    <div class="dashboard-grid" id="dashboardCards">
+                        <!-- Cards will be generated dynamically -->
+                    </div>
+                    <div class="charts-grid">
+                        <div class="chart-container">
+                            <h3 class="chart-title">Distribución de Desempeños General</h3>
+                            <canvas id="performanceChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3 class="chart-title">Comparación por Trimestres</h3>
+                            <canvas id="trimesterChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3 class="chart-title">Desempeños por Asignatura (Top 10)</h3>
+                            <canvas id="subjectChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3 class="chart-title">Desempeños por Grupo</h3>
+                            <canvas id="groupChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estudiantes con Bajo Tab -->
+                <div id="estudiantes-bajo" class="tab-pane">
+                    <div class="filters-container">
+                        <div class="filter-group">
+                            <label>Grupo</label>
+                            <select id="filterGrupoBajo" onchange="filterEstudiantesBajo()">
+                                <option value="">Todos los grupos</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Asignatura</label>
+                            <select id="filterAsignaturaBajo" onchange="filterEstudiantesBajo()">
+                                <option value="">Todas las asignaturas</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Trimestre</label>
+                            <select id="filterTrimestreBajo" onchange="filterEstudiantesBajo()">
+                                <option value="">Todos los trimestres</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="tableBajo">
+                            <thead>
+                                <tr>
+                                    <th>Estudiante</th>
+                                    <th>Grupo</th>
+                                    <th>Asignatura</th>
+                                    <th>Trimestre</th>
+                                    <th>Desempeño</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBajoBody">
+                                <!-- Data will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="export-buttons">
+                        <button class="btn btn-success" onclick="exportToExcel('bajo')">📊 Exportar a Excel</button>
+                        <button class="btn btn-primary" onclick="exportToPDF('bajo')">📄 Exportar a PDF</button>
+                    </div>
+                </div>
+
+                <!-- Resumen por Estudiante Tab -->
+                <div id="resumen-estudiante" class="tab-pane">
+                    <div class="filters-container">
+                        <div class="filter-group">
+                            <label>Grupo</label>
+                            <select id="filterGrupoResumen" onchange="generateStudentSummary()">
+                                <option value="">Todos los grupos</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Trimestre</label>
+                            <select id="filterTrimestreResumen" onchange="generateStudentSummary()">
+                                <option value="">Todos los trimestres</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Ordenar por</label>
+                            <select id="filterOrdenResumen" onchange="generateStudentSummary()">
+                                <option value="nombre">Nombre del estudiante</option>
+                                <option value="cantidad">Cantidad de bajos</option>
+                                <option value="grupo">Grupo y nombre</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Buscar estudiante</label>
+                            <input type="text" id="searchEstudiante" placeholder="Escriba el nombre..." onkeyup="generateStudentSummary()">
+                        </div>
+                    </div>
+                    
+                    <div id="studentSummaryContent">
+                        <!-- Student summary will be generated here -->
+                    </div>
+                </div>
+
+                <!-- Estadísticas Tab -->
+                <div id="estadisticas" class="tab-pane">
+                    <div class="filters-container">
+                        <div class="filter-group">
+                            <label>Trimestre</label>
+                            <select id="filterTrimestreStats" onchange="updateStatistics()">
+                                <option value="">Todos los trimestres</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Asignatura</label>
+                            <select id="filterAsignaturaStats" onchange="updateStatistics()">
+                                <option value="">Todas las asignaturas</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Grupo</label>
+                            <select id="filterGrupoStats" onchange="updateStatistics()">
+                                <option value="">Todos los grupos</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="tableStats">
+                            <thead>
+                                <tr>
+                                    <th>Asignatura</th>
+                                    <th>Bajo</th>
+                                    <th>% Bajo</th>
+                                    <th>Básico</th>
+                                    <th>% Básico</th>
+                                    <th>Alto</th>
+                                    <th>% Alto</th>
+                                    <th>Superior</th>
+                                    <th>% Superior</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableStatsBody">
+                                <!-- Data will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="export-buttons">
+                        <button class="btn btn-success" onclick="exportToExcel('stats')">📊 Exportar a Excel</button>
+                        <button class="btn btn-primary" onclick="exportToPDF('stats')">📄 Exportar a PDF</button>
+                    </div>
+                </div>
+
+                <!-- Análisis Avanzado Tab -->
+                <div id="analisis-avanzado" class="tab-pane">
+                    <div class="filters-container">
+                        <div class="filter-group">
+                            <label>Seleccionar Grupo</label>
+                            <select id="filterGrupoAvanzado" onchange="updateAdvancedAnalysis()">
+                                <option value="">Todos los grupos</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Trimestre</label>
+                            <select id="filterTrimestreAvanzado" onchange="updateAdvancedAnalysis()">
+                                <option value="">Todos los trimestres</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Tipo de Análisis</label>
+                            <select id="filterTipoAnalisis" onchange="updateAdvancedAnalysis()">
+                                <option value="general">Análisis General</option>
+                                <option value="comparativo">Comparativo entre Grupos</option>
+                                <option value="evolutivo">Evolución Temporal</option>
+                                <option value="asignaturas">Por Asignaturas</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="advancedAnalysisContent">
+                        <div class="dashboard-grid">
+                            <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                                <h3>Tasa de Reprobación</h3>
+                                <div class="stat-value" id="failureRate">0%</div>
+                                <div class="stat-detail" id="failureDetail">Calculando...</div>
+                            </div>
+                            <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                                <h3>Promedio de Excelencia</h3>
+                                <div class="stat-value" id="excellenceRate">0%</div>
+                                <div class="stat-detail" id="excellenceDetail">Calculando...</div>
+                            </div>
+                            <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                                <h3>Índice de Rendimiento</h3>
+                                <div class="stat-value" id="performanceIndex">0</div>
+                                <div class="stat-detail" id="performanceDetail">Calculando...</div>
+                            </div>
+                            <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                                <h3>Asignatura Crítica</h3>
+                                <div class="stat-value" id="criticalSubject" style="font-size: 18px;">-</div>
+                                <div class="stat-detail" id="criticalDetail">Mayor % de bajos</div>
+                            </div>
+                        </div>
+                        
+                        <div id="advancedChartsContainer" style="margin-top: 30px;">
+                            <div class="charts-grid">
+                                <div class="chart-container">
+                                    <h3 class="chart-title">Distribución de Desempeño</h3>
+                                    <canvas id="advancedDistributionChart"></canvas>
+                                </div>
+                                <div class="chart-container">
+                                    <h3 class="chart-title">Comparación por Asignatura</h3>
+                                    <canvas id="advancedSubjectChart"></canvas>
+                                </div>
+                            </div>
+                            
+                            <div class="charts-grid" style="margin-top: 20px;">
+                                <div class="chart-container">
+                                    <h3 class="chart-title">Tendencia de Desempeño</h3>
+                                    <canvas id="advancedTrendChart"></canvas>
+                                </div>
+                                <div class="chart-container">
+                                    <h3 class="chart-title">Top Estudiantes en Riesgo</h3>
+                                    <div id="riskStudentsList" style="padding: 20px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="groupComparisonTable" style="margin-top: 30px; display: none;">
+                            <!-- Comparison table will be generated here -->
+                        </div>
+                        
+                        <div class="export-buttons" style="margin-top: 20px;">
+                            <button class="btn btn-success" onclick="exportAdvancedAnalysis('excel')">
+                                📊 Exportar Análisis Completo
+                            </button>
+                            <button class="btn btn-primary" onclick="exportAdvancedAnalysis('pdf')">
+                                📄 Generar Informe PDF
+                            </button>
+                            <button class="btn btn-info" onclick="generateAdvancedReport()">
+                                📋 Generar Reporte Detallado
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reportes por Grupo Tab -->
+                <div id="reportes-grupo" class="tab-pane">
+                    <div class="filters-container">
+                        <div class="filter-group">
+                            <label>Seleccionar Grupo</label>
+                            <select id="filterGrupoReport" onchange="generateGroupReport()">
+                                <option value="">Seleccione un grupo</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Trimestre</label>
+                            <select id="filterTrimestreReport" onchange="generateGroupReport()">
+                                <option value="">Todos los trimestres</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Desempeño</label>
+                            <select id="filterDesempenoReport" onchange="generateGroupReport()">
+                                <option value="">Todos los desempeños</option>
+                                <option value="BAJO">Solo Bajo</option>
+                                <option value="BÁSICO">Solo Básico</option>
+                                <option value="ALTO">Solo Alto</option>
+                                <option value="SUPERIOR">Solo Superior</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Asignatura</label>
+                            <select id="filterAsignaturaReport" onchange="generateGroupReport()">
+                                <option value="">Todas las asignaturas</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="groupReportContent">
+                        <!-- Group report will be generated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global data storage
+        let allData = [];
+        let grupos = [];
+        let asignaturas = [];
+        let trimestres = [];
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load saved school info from localStorage
+            loadSchoolInfo();
+            showEmptyState();
+            
+            // Initialize empty charts to avoid errors
+            initializeEmptyCharts();
+        });
+        
+        // Load school info from localStorage
+        function loadSchoolInfo() {
+            const savedName = localStorage.getItem('schoolName');
+            const savedLogo = localStorage.getItem('schoolLogo');
+            const savedYear = localStorage.getItem('schoolYear');
+            
+            if (savedName) {
+                document.getElementById('schoolNameInput').value = savedName;
+                document.getElementById('schoolNameDisplay').textContent = savedName;
+            }
+            
+            if (savedLogo) {
+                document.getElementById('schoolLogo').src = savedLogo;
+                document.getElementById('schoolLogo').style.display = 'block';
+                document.getElementById('logoPlaceholder').style.display = 'none';
+            }
+            
+            if (savedYear) {
+                document.getElementById('yearInput').value = savedYear;
+            }
+        }
+        
+        // Initialize empty charts
+        function initializeEmptyCharts() {
+            // Initialize dashboard charts
+            const performanceCtx = document.getElementById('performanceChart');
+            if (performanceCtx) {
+                const ctx = performanceCtx.getContext('2d');
+                ctx.fillStyle = '#f0f0f0';
+                ctx.fillRect(0, 0, performanceCtx.width, performanceCtx.height);
+                ctx.fillStyle = '#999';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Cargue datos para ver el gráfico', performanceCtx.width/2, performanceCtx.height/2);
+            }
+            
+            const trimesterCtx = document.getElementById('trimesterChart');
+            if (trimesterCtx) {
+                const ctx = trimesterCtx.getContext('2d');
+                ctx.fillStyle = '#f0f0f0';
+                ctx.fillRect(0, 0, trimesterCtx.width, trimesterCtx.height);
+                ctx.fillStyle = '#999';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Cargue datos para ver el gráfico', trimesterCtx.width/2, trimesterCtx.height/2);
+            }
+            
+            const subjectCtx = document.getElementById('subjectChart');
+            if (subjectCtx) {
+                const ctx = subjectCtx.getContext('2d');
+                ctx.fillStyle = '#f0f0f0';
+                ctx.fillRect(0, 0, subjectCtx.width, subjectCtx.height);
+                ctx.fillStyle = '#999';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Cargue datos para ver el gráfico', subjectCtx.width/2, subjectCtx.height/2);
+            }
+            
+            const groupCtx = document.getElementById('groupChart');
+            if (groupCtx) {
+                const ctx = groupCtx.getContext('2d');
+                ctx.fillStyle = '#f0f0f0';
+                ctx.fillRect(0, 0, groupCtx.width, groupCtx.height);
+                ctx.fillStyle = '#999';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Cargue datos para ver el gráfico', groupCtx.width/2, groupCtx.height/2);
+            }
+        }
+
+        // Function to handle file upload - Optimized
+        async function handleFileUpload(event, trimesterNumber) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Check file size (limit to 10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                showMessage('El archivo es demasiado grande (máx 10MB)', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    showMessage('Procesando archivo...', 'info');
+                    
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { 
+                        type: 'array',
+                        cellDates: true,
+                        cellStyles: false, // Disable styles to save memory
+                        cellFormula: false, // Disable formulas to save memory
+                        sheetStubs: false
+                    });
+                    
+                    // Process the workbook
+                    const processedData = processWorkbook(workbook, trimesterNumber);
+                    
+                    if (processedData.length === 0) {
+                        showMessage('No se encontraron datos válidos en el archivo', 'error');
+                        return;
+                    }
+                    
+                    // Merge with existing data
+                    mergeData(processedData);
+                    
+                    // Update UI
+                    updateUI();
+                    
+                    // Show success message
+                    showMessage(`Trimestre ${trimesterNumber} cargado exitosamente (${processedData.length} registros)`, 'success');
+                } catch (error) {
+                    console.error('Error processing file:', error);
+                    showMessage('Error al procesar el archivo. Intente con un archivo más pequeño.', 'error');
+                }
+            };
+            
+            reader.onerror = function() {
+                showMessage('Error al leer el archivo', 'error');
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Process workbook data - Fixed based on actual structure
+        function processWorkbook(workbook, trimesterNumber) {
+            const processedData = [];
+            console.log(`Processing ${workbook.SheetNames.length} sheets for Trimestre ${trimesterNumber}`);
+            
+            workbook.SheetNames.forEach((sheetName, sheetIndex) => {
+                try {
+                    const sheet = workbook.Sheets[sheetName];
+                    const data = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
+                    
+                    // Skip empty sheets
+                    if (!data || data.length < 9) {
+                        console.log(`Skipping empty sheet: ${sheetName}`);
+                        return;
+                    }
+                    
+                    // Extract subject names from row 6 (index 6)
+                    // Subjects start at column 2 (index 2)
+                    let subjects = [];
+                    if (data[6] && Array.isArray(data[6])) {
+                        for (let col = 2; col < data[6].length; col++) {
+                            if (data[6][col] && data[6][col] !== null) {
+                                let subjectName = String(data[6][col]);
+                                // Clean subject name (remove teacher name in parentheses)
+                                if (subjectName.includes('(')) {
+                                    subjectName = subjectName.split('(')[0].trim();
+                                }
+                                subjects.push({
+                                    name: subjectName,
+                                    colIndex: col
+                                });
+                            }
+                        }
+                    }
+                    
+                    console.log(`Sheet ${sheetName}: Found ${subjects.length} subjects`);
+                    
+                    // Process student data starting from row 8 (index 8)
+                    let studentCount = 0;
+                    for (let i = 8; i < data.length; i++) {
+                        const row = data[i];
+                        if (!row || !row[1]) continue;
+                        
+                        // Check if this is the end marker row
+                        const cellContent = String(row[1]).trim();
+                        if (cellContent === '-' || cellContent === '' || row[2] === '-') break;
+                        
+                        // Column 1 (index 1) has "APELLIDOS, NOMBRES" format
+                        const fullName = cellContent;
+                        
+                        // Parse the student name
+                        let apellidos = '';
+                        let nombres = '';
+                        
+                        if (fullName.includes(',')) {
+                            const parts = fullName.split(',');
+                            apellidos = parts[0].trim();
+                            nombres = parts[1] ? parts[1].trim() : 'Sin nombre';
+                        } else {
+                            // If no comma, treat the whole thing as apellidos
+                            apellidos = fullName;
+                            nombres = 'Sin nombre';
+                        }
+                        
+                        if (!apellidos || apellidos === 'null') continue;
+                        
+                        studentCount++;
+                        const studentFullName = `${apellidos} ${nombres}`.trim();
+                        
+                        // Process each subject grade
+                        // Grades start at the same column as the subject name
+                        subjects.forEach(subject => {
+                            const gradeValue = row[subject.colIndex];
+                            if (gradeValue) {
+                                const grade = normalizeGrade(gradeValue);
+                                
+                                if (isValidGrade(grade)) {
+                                    processedData.push({
+                                        estudiante: studentFullName,
+                                        apellidos: apellidos,
+                                        nombres: nombres,
+                                        grupo: sheetName,
+                                        trimestre: `Trimestre ${trimesterNumber}`,
+                                        asignatura: subject.name,
+                                        desempeno: grade
+                                    });
+                                }
+                            }
+                        });
+                    }
+                    
+                    console.log(`Sheet ${sheetName}: Processed ${studentCount} students`);
+                    
+                } catch (error) {
+                    console.error(`Error processing sheet ${sheetName}:`, error);
+                }
+            });
+            
+            console.log(`Total records processed for Trimestre ${trimesterNumber}: ${processedData.length}`);
+            return processedData;
+        }
+
+        // Normalize grades
+        function normalizeGrade(grade) {
+            if (!grade) return null;
+            
+            const gradeStr = grade.toString().toUpperCase().trim();
+            
+            // Map various spellings to standard grades
+            if (gradeStr.includes('BAJO') || gradeStr === 'INSUFICIENTE') return 'BAJO';
+            if (gradeStr.includes('BASIC') || gradeStr.includes('BÁSIC') || 
+                gradeStr.includes('BÀSIC') || gradeStr === 'ACEPTABLE') return 'BÁSICO';
+            if (gradeStr.includes('ALTO') || gradeStr === 'SOBRESALIENTE') return 'ALTO';
+            if (gradeStr.includes('SUPER') || gradeStr === 'EXCELENTE') return 'SUPERIOR';
+            
+            return null;
+        }
+
+        // Check if grade is valid
+        function isValidGrade(grade) {
+            return ['BAJO', 'BÁSICO', 'ALTO', 'SUPERIOR'].includes(grade);
+        }
+
+        // Merge new data with existing data - Fixed to not overwrite
+        function mergeData(newData) {
+            if (newData.length === 0) {
+                console.log('No new data to merge');
+                return;
+            }
+            
+            // Get the trimester from new data
+            const trimestre = newData[0].trimestre;
+            console.log(`Merging ${newData.length} records from ${trimestre}`);
+            
+            // Remove only the data for this specific trimester (to allow re-uploading)
+            const existingOtherData = allData.filter(d => d.trimestre !== trimestre);
+            console.log(`Keeping ${existingOtherData.length} existing records from other trimesters`);
+            
+            // Combine existing data from other trimesters with new data
+            allData = [...existingOtherData, ...newData];
+            console.log(`Total records after merge: ${allData.length}`);
+            
+            // Update unique values
+            grupos = [...new Set(allData.map(d => d.grupo))].sort();
+            asignaturas = [...new Set(allData.map(d => d.asignatura))].sort();
+            trimestres = [...new Set(allData.map(d => d.trimestre))].sort();
+            
+            console.log(`Unique groups: ${grupos.length}`);
+            console.log(`Unique subjects: ${asignaturas.length}`);
+            console.log(`Unique trimesters: ${trimestres.length}`);
+        }
+
+        // Update UI components - ensure all data is shown
+        function updateUI() {
+            console.log('Updating UI with', allData.length, 'total records');
+            console.log('Groups:', grupos.length, 'Subjects:', asignaturas.length, 'Trimesters:', trimestres.length);
+            
+            updateFilters();
+            updateDashboard();
+            filterEstudiantesBajo();
+            generateStudentSummary();
+            updateStatistics();
+            updateAdvancedAnalysis();
+            
+            // Show data summary
+            if (allData.length > 0) {
+                const summary = `
+                    Datos cargados: ${allData.length} registros | 
+                    ${grupos.length} grupos | 
+                    ${asignaturas.length} asignaturas | 
+                    ${trimestres.length} trimestres
+                `;
+                console.log(summary);
+            }
+        }
+
+        // Update filters - Including all filters
+        function updateFilters() {
+            // Update all filter dropdowns
+            const filterElements = [
+                { id: 'filterGrupoBajo', items: grupos },
+                { id: 'filterGrupoStats', items: grupos },
+                { id: 'filterGrupoReport', items: grupos },
+                { id: 'filterGrupoResumen', items: grupos },
+                { id: 'filterGrupoAvanzado', items: grupos },
+                { id: 'filterAsignaturaBajo', items: asignaturas },
+                { id: 'filterAsignaturaStats', items: asignaturas },
+                { id: 'filterAsignaturaReport', items: asignaturas },
+                { id: 'filterTrimestreBajo', items: trimestres },
+                { id: 'filterTrimestreStats', items: trimestres },
+                { id: 'filterTrimestreReport', items: trimestres },
+                { id: 'filterTrimestreResumen', items: trimestres },
+                { id: 'filterTrimestreAvanzado', items: trimestres }
+            ];
+            
+            filterElements.forEach(filter => {
+                const select = document.getElementById(filter.id);
+                if (select) {
+                    const currentValue = select.value;
+                    const defaultText = filter.id.includes('Grupo') ? 'Todos los grupos' :
+                                       filter.id.includes('Asignatura') ? 'Todas las asignaturas' :
+                                       'Todos los trimestres';
+                    select.innerHTML = `<option value="">${defaultText}</option>`;
+                    filter.items.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item;
+                        option.textContent = item;
+                        select.appendChild(option);
+                    });
+                    select.value = currentValue;
+                }
+            });
+        }
+
+        // Update dashboard
+        function updateDashboard() {
+            if (allData.length === 0) {
+                showEmptyState();
+                return;
+            }
+            
+            // Calculate statistics
+            const totalStudents = new Set(allData.map(d => d.estudiante)).size;
+            const totalGroups = grupos.length;
+            const totalSubjects = asignaturas.length;
+            
+            const bajoCount = allData.filter(d => d.desempeno === 'BAJO').length;
+            const basicoCount = allData.filter(d => d.desempeno === 'BÁSICO').length;
+            const altoCount = allData.filter(d => d.desempeno === 'ALTO').length;
+            const superiorCount = allData.filter(d => d.desempeno === 'SUPERIOR').length;
+            
+            // Update dashboard cards
+            const dashboardCards = document.getElementById('dashboardCards');
+            dashboardCards.innerHTML = `
+                <div class="stat-card">
+                    <h3>Total Estudiantes</h3>
+                    <div class="stat-value">${totalStudents}</div>
+                    <div class="stat-detail">En ${totalGroups} grupos</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                    <h3>Desempeño Bajo</h3>
+                    <div class="stat-value">${bajoCount}</div>
+                    <div class="stat-detail">${((bajoCount / allData.length) * 100).toFixed(1)}% del total</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">
+                    <h3>Desempeño Básico</h3>
+                    <div class="stat-value">${basicoCount}</div>
+                    <div class="stat-detail">${((basicoCount / allData.length) * 100).toFixed(1)}% del total</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                    <h3>Desempeño Alto</h3>
+                    <div class="stat-value">${altoCount}</div>
+                    <div class="stat-detail">${((altoCount / allData.length) * 100).toFixed(1)}% del total</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);">
+                    <h3>Desempeño Superior</h3>
+                    <div class="stat-value">${superiorCount}</div>
+                    <div class="stat-detail">${((superiorCount / allData.length) * 100).toFixed(1)}% del total</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
+                    <h3>Total Asignaturas</h3>
+                    <div class="stat-value">${totalSubjects}</div>
+                    <div class="stat-detail">Evaluadas</div>
+                </div>
+            `;
+            
+            // Wait a bit for DOM to be ready, then update charts
+            setTimeout(() => {
+                updateCharts();
+            }, 100);
+        }
+
+        // Update charts - with all 4 charts including new ones - FIXED VERSION
+        function updateCharts() {
+            // Check if we have data
+            if (allData.length === 0) {
+                console.log('No data for charts');
+                return;
+            }
+            
+            console.log('Starting to update charts with', allData.length, 'records');
+            
+            // Destroy existing charts if they exist
+            if (window.performanceChart && typeof window.performanceChart.destroy === 'function') {
+                window.performanceChart.destroy();
+                window.performanceChart = null;
+            }
+            if (window.trimesterChart && typeof window.trimesterChart.destroy === 'function') {
+                window.trimesterChart.destroy();
+                window.trimesterChart = null;
+            }
+            if (window.subjectChart && typeof window.subjectChart.destroy === 'function') {
+                window.subjectChart.destroy();
+                window.subjectChart = null;
+            }
+            if (window.groupChart && typeof window.groupChart.destroy === 'function') {
+                window.groupChart.destroy();
+                window.groupChart = null;
+            }
+            
+            try {
+                // 1. Performance Chart (Doughnut)
+                const performanceCanvas = document.getElementById('performanceChart');
+                if (performanceCanvas) {
+                    const ctx = performanceCanvas.getContext('2d');
+                    
+                    const bajoCount = allData.filter(d => d.desempeno === 'BAJO').length;
+                    const basicoCount = allData.filter(d => d.desempeno === 'BÁSICO').length;
+                    const altoCount = allData.filter(d => d.desempeno === 'ALTO').length;
+                    const superiorCount = allData.filter(d => d.desempeno === 'SUPERIOR').length;
+                    
+                    console.log('Performance data:', { bajoCount, basicoCount, altoCount, superiorCount });
+                    
+                    const performanceData = {
+                        labels: ['Bajo', 'Básico', 'Alto', 'Superior'],
+                        datasets: [{
+                            data: [bajoCount, basicoCount, altoCount, superiorCount],
+                            backgroundColor: ['#ff4757', '#ffa502', '#3742fa', '#2ed573'],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    };
+                    
+                    window.performanceChart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: performanceData,
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        font: { size: 12 }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                            return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    console.log('Performance chart created');
+                }
+                
+                // 2. Trimester Comparison Chart (Stacked Bar)
+                const trimesterCanvas = document.getElementById('trimesterChart');
+                if (trimesterCanvas && trimestres.length > 0) {
+                    const ctx = trimesterCanvas.getContext('2d');
+                    
+                    const datasets = [
+                        {
+                            label: 'Bajo',
+                            data: trimestres.map(t => 
+                                allData.filter(d => d.trimestre === t && d.desempeno === 'BAJO').length
+                            ),
+                            backgroundColor: '#ff4757'
+                        },
+                        {
+                            label: 'Básico',
+                            data: trimestres.map(t => 
+                                allData.filter(d => d.trimestre === t && d.desempeno === 'BÁSICO').length
+                            ),
+                            backgroundColor: '#ffa502'
+                        },
+                        {
+                            label: 'Alto',
+                            data: trimestres.map(t => 
+                                allData.filter(d => d.trimestre === t && d.desempeno === 'ALTO').length
+                            ),
+                            backgroundColor: '#3742fa'
+                        },
+                        {
+                            label: 'Superior',
+                            data: trimestres.map(t => 
+                                allData.filter(d => d.trimestre === t && d.desempeno === 'SUPERIOR').length
+                            ),
+                            backgroundColor: '#2ed573'
+                        }
+                    ];
+                    
+                    window.trimesterChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: trimestres,
+                            datasets: datasets
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            scales: {
+                                x: { 
+                                    stacked: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Trimestres'
+                                    }
+                                },
+                                y: { 
+                                    stacked: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Cantidad de Calificaciones'
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }
+                    });
+                    console.log('Trimester chart created');
+                }
+                
+                // 3. Subject Performance Chart
+                const subjectCanvas = document.getElementById('subjectChart');
+                if (subjectCanvas && asignaturas.length > 0) {
+                    const ctx = subjectCanvas.getContext('2d');
+                    
+                    // Calculate stats for top 10 subjects
+                    const subjectStats = {};
+                    asignaturas.slice(0, 10).forEach(subj => {
+                        const subjData = allData.filter(d => d.asignatura === subj);
+                        if (subjData.length > 0) {
+                            const total = subjData.length;
+                            const bajo = subjData.filter(d => d.desempeno === 'BAJO').length;
+                            subjectStats[subj] = (bajo / total * 100).toFixed(1);
+                        }
+                    });
+                    
+                    const subjectLabels = Object.keys(subjectStats);
+                    const subjectValues = Object.values(subjectStats);
+                    
+                    window.subjectChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: subjectLabels,
+                            datasets: [{
+                                label: '% Desempeño Bajo',
+                                data: subjectValues,
+                                backgroundColor: 'rgba(255, 71, 87, 0.8)',
+                                borderColor: '#ff4757',
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    title: {
+                                        display: true,
+                                        text: 'Porcentaje (%)'
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            }
+                        }
+                    });
+                    console.log('Subject chart created');
+                }
+                
+                // 4. Group Performance Chart
+                const groupCanvas = document.getElementById('groupChart');
+                if (groupCanvas && grupos.length > 0) {
+                    const ctx = groupCanvas.getContext('2d');
+                    
+                    // Calculate performance by group (top 10)
+                    const groupStats = {};
+                    const topGroups = grupos.slice(0, 10);
+                    
+                    topGroups.forEach(group => {
+                        const groupData = allData.filter(d => d.grupo === group);
+                        if (groupData.length > 0) {
+                            const bajoCount = groupData.filter(d => d.desempeno === 'BAJO').length;
+                            groupStats[group] = (bajoCount / groupData.length * 100).toFixed(1);
+                        }
+                    });
+                    
+                    window.groupChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: Object.keys(groupStats),
+                            datasets: [{
+                                label: '% Desempeño Bajo',
+                                data: Object.values(groupStats),
+                                backgroundColor: 'rgba(255, 71, 87, 0.8)',
+                                borderColor: '#ff4757',
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    title: {
+                                        display: true,
+                                        text: 'Porcentaje de Bajo (%)'
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Grupos'
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            }
+                        }
+                    });
+                    console.log('Group chart created');
+                }
+                
+                console.log('All charts updated successfully');
+                
+            } catch (error) {
+                console.error('Error creating charts:', error);
+                showMessage('Error al crear los gráficos. Por favor, recargue la página.', 'error');
+            }
+        }
+
+        // Filter students with low performance
+        function filterEstudiantesBajo() {
+            const grupo = document.getElementById('filterGrupoBajo').value;
+            const asignatura = document.getElementById('filterAsignaturaBajo').value;
+            const trimestre = document.getElementById('filterTrimestreBajo').value;
+            
+            let filteredData = allData.filter(d => d.desempeno === 'BAJO');
+            
+            if (grupo) filteredData = filteredData.filter(d => d.grupo === grupo);
+            if (asignatura) filteredData = filteredData.filter(d => d.asignatura === asignatura);
+            if (trimestre) filteredData = filteredData.filter(d => d.trimestre === trimestre);
+            
+            // Sort by student name
+            filteredData.sort((a, b) => a.estudiante.localeCompare(b.estudiante));
+            
+            // Update table
+            const tbody = document.getElementById('tableBajoBody');
+            tbody.innerHTML = filteredData.map(d => `
+                <tr>
+                    <td>${d.estudiante}</td>
+                    <td>${d.grupo}</td>
+                    <td>${d.asignatura}</td>
+                    <td>${d.trimestre}</td>
+                    <td><span class="desempeno-badge desempeno-bajo">BAJO</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // Update statistics
+        function updateStatistics() {
+            const trimestre = document.getElementById('filterTrimestreStats').value;
+            const asignatura = document.getElementById('filterAsignaturaStats').value;
+            const grupo = document.getElementById('filterGrupoStats').value;
+            
+            let filteredData = [...allData];
+            
+            if (trimestre) filteredData = filteredData.filter(d => d.trimestre === trimestre);
+            if (asignatura) filteredData = filteredData.filter(d => d.asignatura === asignatura);
+            if (grupo) filteredData = filteredData.filter(d => d.grupo === grupo);
+            
+            // Group by subject
+            const stats = {};
+            const subjectsToShow = asignatura ? [asignatura] : asignaturas;
+            
+            subjectsToShow.forEach(subj => {
+                const subjectData = filteredData.filter(d => d.asignatura === subj);
+                const total = subjectData.length;
+                
+                if (total > 0) {
+                    const bajo = subjectData.filter(d => d.desempeno === 'BAJO').length;
+                    const basico = subjectData.filter(d => d.desempeno === 'BÁSICO').length;
+                    const alto = subjectData.filter(d => d.desempeno === 'ALTO').length;
+                    const superior = subjectData.filter(d => d.desempeno === 'SUPERIOR').length;
+                    
+                    stats[subj] = {
+                        bajo, basico, alto, superior, total,
+                        bajoPct: (bajo / total * 100).toFixed(1),
+                        basicoPct: (basico / total * 100).toFixed(1),
+                        altoPct: (alto / total * 100).toFixed(1),
+                        superiorPct: (superior / total * 100).toFixed(1)
+                    };
+                }
+            });
+            
+            // Update table
+            const tbody = document.getElementById('tableStatsBody');
+            tbody.innerHTML = Object.entries(stats).map(([subj, data]) => `
+                <tr>
+                    <td>${subj}</td>
+                    <td>${data.bajo}</td>
+                    <td>${data.bajoPct}%</td>
+                    <td>${data.basico}</td>
+                    <td>${data.basicoPct}%</td>
+                    <td>${data.alto}</td>
+                    <td>${data.altoPct}%</td>
+                    <td>${data.superior}</td>
+                    <td>${data.superiorPct}%</td>
+                    <td>${data.total}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Update advanced analysis - Complete rewrite with group-based analysis
+        function updateAdvancedAnalysis() {
+            const grupo = document.getElementById('filterGrupoAvanzado')?.value || '';
+            const trimestre = document.getElementById('filterTrimestreAvanzado')?.value || '';
+            const tipoAnalisis = document.getElementById('filterTipoAnalisis')?.value || 'general';
+            
+            if (allData.length === 0) {
+                document.getElementById('failureRate').textContent = '0%';
+                document.getElementById('excellenceRate').textContent = '0%';
+                document.getElementById('performanceIndex').textContent = '0';
+                document.getElementById('criticalSubject').textContent = 'Sin datos';
+                return;
+            }
+            
+            // Filter data based on selections
+            let filteredData = [...allData];
+            if (grupo) filteredData = filteredData.filter(d => d.grupo === grupo);
+            if (trimestre) filteredData = filteredData.filter(d => d.trimestre === trimestre);
+            
+            if (filteredData.length === 0) {
+                document.getElementById('failureRate').textContent = '0%';
+                document.getElementById('failureDetail').textContent = 'Sin datos para este grupo';
+                document.getElementById('excellenceRate').textContent = '0%';
+                document.getElementById('excellenceDetail').textContent = 'Sin datos para este grupo';
+                document.getElementById('performanceIndex').textContent = '0';
+                document.getElementById('performanceDetail').textContent = 'Sin datos';
+                document.getElementById('criticalSubject').textContent = 'N/A';
+                return;
+            }
+            
+            // Calculate advanced metrics for the filtered data
+            
+            // 1. Failure Rate (students with at least one BAJO)
+            const studentGrades = {};
+            filteredData.forEach(d => {
+                if (!studentGrades[d.estudiante]) {
+                    studentGrades[d.estudiante] = {
+                        total: 0,
+                        bajo: 0,
+                        basico: 0,
+                        alto: 0,
+                        superior: 0,
+                        grupo: d.grupo
+                    };
+                }
+                studentGrades[d.estudiante].total++;
+                studentGrades[d.estudiante][d.desempeno.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace('á','a').replace('í','i')]++;
+            });
+            
+            const totalStudents = Object.keys(studentGrades).length;
+            const studentsWithBajo = Object.values(studentGrades).filter(s => s.bajo > 0).length;
+            const failureRate = totalStudents > 0 ? (studentsWithBajo / totalStudents * 100).toFixed(1) : 0;
+            
+            // 2. Excellence Rate
+            const superiorCount = filteredData.filter(d => d.desempeno === 'SUPERIOR').length;
+            const excellenceRate = filteredData.length > 0 ? (superiorCount / filteredData.length * 100).toFixed(1) : 0;
+            
+            // 3. Performance Index (weighted average: Superior=4, Alto=3, Básico=2, Bajo=1)
+            let totalWeight = 0;
+            let totalCount = 0;
+            filteredData.forEach(d => {
+                totalCount++;
+                switch(d.desempeno) {
+                    case 'SUPERIOR': totalWeight += 4; break;
+                    case 'ALTO': totalWeight += 3; break;
+                    case 'BÁSICO': totalWeight += 2; break;
+                    case 'BAJO': totalWeight += 1; break;
+                }
+            });
+            const performanceIndex = totalCount > 0 ? (totalWeight / totalCount).toFixed(2) : 0;
+            
+            // 4. Critical Subject (highest failure rate)
+            const subjectStats = {};
+            asignaturas.forEach(subj => {
+                const subjData = filteredData.filter(d => d.asignatura === subj);
+                if (subjData.length > 0) {
+                    const bajoCount = subjData.filter(d => d.desempeno === 'BAJO').length;
+                    subjectStats[subj] = {
+                        total: subjData.length,
+                        bajo: bajoCount,
+                        percentage: (bajoCount / subjData.length * 100).toFixed(1)
+                    };
+                }
+            });
+            
+            const criticalSubject = Object.entries(subjectStats)
+                .sort((a, b) => parseFloat(b[1].percentage) - parseFloat(a[1].percentage))[0];
+            
+            // Update display
+            document.getElementById('failureRate').textContent = failureRate + '%';
+            document.getElementById('failureDetail').textContent = `${studentsWithBajo} de ${totalStudents} estudiantes`;
+            
+            document.getElementById('excellenceRate').textContent = excellenceRate + '%';
+            document.getElementById('excellenceDetail').textContent = `${superiorCount} calificaciones superiores`;
+            
+            document.getElementById('performanceIndex').textContent = performanceIndex;
+            let performanceLabel = 'Bajo';
+            if (performanceIndex >= 3.5) performanceLabel = 'Excelente';
+            else if (performanceIndex >= 3) performanceLabel = 'Alto';
+            else if (performanceIndex >= 2.5) performanceLabel = 'Aceptable';
+            else if (performanceIndex >= 2) performanceLabel = 'Regular';
+            document.getElementById('performanceDetail').textContent = `Nivel: ${performanceLabel}`;
+            
+            if (criticalSubject) {
+                document.getElementById('criticalSubject').textContent = criticalSubject[0];
+                document.getElementById('criticalDetail').textContent = `${criticalSubject[1].percentage}% en bajo`;
+            }
+            
+            // Generate analysis based on type
+            switch(tipoAnalisis) {
+                case 'comparativo':
+                    generateComparativeAnalysis(grupo, trimestre);
+                    break;
+                case 'evolutivo':
+                    generateEvolutiveAnalysis(grupo);
+                    break;
+                case 'asignaturas':
+                    generateSubjectAnalysis(grupo, trimestre);
+                    break;
+                default:
+                    generateGeneralAnalysis(filteredData, studentGrades, subjectStats);
+            }
+            
+            // Update charts
+            updateAdvancedCharts(filteredData, subjectStats);
+            
+            // Generate risk students list
+            generateRiskStudentsList(studentGrades);
+        }
+        
+        // Generate general analysis with proper charts and data
+        function generateGeneralAnalysis(filteredData, studentGrades, subjectStats) {
+            document.getElementById('groupComparisonTable').style.display = 'none';
+            
+            // Ensure charts container is visible
+            const chartsContainer = document.getElementById('advancedChartsContainer');
+            if (chartsContainer) {
+                chartsContainer.style.display = 'block';
+            }
+            
+            // Update the advanced charts
+            setTimeout(() => {
+                updateAdvancedCharts(filteredData, subjectStats);
+            }, 100);
+        }
+        
+        // Generate comparative analysis between groups
+        function generateComparativeAnalysis(selectedGroup, trimestre) {
+            // Hide charts for comparative view
+            const chartsContainer = document.getElementById('advancedChartsContainer');
+            if (chartsContainer) {
+                chartsContainer.style.display = 'block';
+            }
+            
+            const comparisonData = [];
+            
+            grupos.forEach(grp => {
+                let groupData = allData.filter(d => d.grupo === grp);
+                if (trimestre) groupData = groupData.filter(d => d.trimestre === trimestre);
+                
+                if (groupData.length > 0) {
+                    const bajoCount = groupData.filter(d => d.desempeno === 'BAJO').length;
+                    const basicoCount = groupData.filter(d => d.desempeno === 'BÁSICO').length;
+                    const altoCount = groupData.filter(d => d.desempeno === 'ALTO').length;
+                    const superiorCount = groupData.filter(d => d.desempeno === 'SUPERIOR').length;
+                    const total = groupData.length;
+                    
+                    comparisonData.push({
+                        grupo: grp,
+                        total: total,
+                        bajo: (bajoCount / total * 100).toFixed(1),
+                        basico: (basicoCount / total * 100).toFixed(1),
+                        alto: (altoCount / total * 100).toFixed(1),
+                        superior: (superiorCount / total * 100).toFixed(1),
+                        isSelected: grp === selectedGroup
+                    });
+                }
+            });
+            
+            // Sort by performance (lowest bajo percentage first)
+            comparisonData.sort((a, b) => parseFloat(a.bajo) - parseFloat(b.bajo));
+            
+            // Generate comparison table
+            let tableHTML = `
+                <h3 style="color: #667eea; margin-bottom: 20px;">Comparación entre Grupos ${trimestre ? `- ${trimestre}` : ''}</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Posición</th>
+                                <th>Grupo</th>
+                                <th>% Bajo</th>
+                                <th>% Básico</th>
+                                <th>% Alto</th>
+                                <th>% Superior</th>
+                                <th>Total Registros</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            comparisonData.forEach((data, index) => {
+                const rowStyle = data.isSelected ? 'background: #e3f2fd; font-weight: bold;' : '';
+                tableHTML += `
+                    <tr style="${rowStyle}">
+                        <td>${index + 1}</td>
+                        <td>${data.grupo} ${data.isSelected ? '⭐' : ''}</td>
+                        <td style="color: #ff4757;">${data.bajo}%</td>
+                        <td style="color: #ffa502;">${data.basico}%</td>
+                        <td style="color: #3742fa;">${data.alto}%</td>
+                        <td style="color: #2ed573;">${data.superior}%</td>
+                        <td>${data.total}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            document.getElementById('groupComparisonTable').innerHTML = tableHTML;
+            document.getElementById('groupComparisonTable').style.display = 'block';
+        }
+        
+        // Generate evolutive analysis across time
+        function generateEvolutiveAnalysis(grupo) {
+            // Show charts
+            const chartsContainer = document.getElementById('advancedChartsContainer');
+            if (chartsContainer) {
+                chartsContainer.style.display = 'block';
+            }
+            
+            // Create evolution table
+            let evolutionHTML = `
+                <h3 style="color: #667eea; margin-bottom: 20px;">Evolución Temporal ${grupo ? `- Grupo ${grupo}` : '- Todos los Grupos'}</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Trimestre</th>
+                                <th>Total Registros</th>
+                                <th>% Bajo</th>
+                                <th>% Básico</th>
+                                <th>% Alto</th>
+                                <th>% Superior</th>
+                                <th>Índice Promedio</th>
+                                <th>Tendencia</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            let previousIndex = 0;
+            trimestres.forEach((trim, index) => {
+                let trimData = allData.filter(d => d.trimestre === trim);
+                if (grupo) trimData = trimData.filter(d => d.grupo === grupo);
+                
+                if (trimData.length > 0) {
+                    const total = trimData.length;
+                    const bajo = (trimData.filter(d => d.desempeno === 'BAJO').length / total * 100).toFixed(1);
+                    const basico = (trimData.filter(d => d.desempeno === 'BÁSICO').length / total * 100).toFixed(1);
+                    const alto = (trimData.filter(d => d.desempeno === 'ALTO').length / total * 100).toFixed(1);
+                    const superior = (trimData.filter(d => d.desempeno === 'SUPERIOR').length / total * 100).toFixed(1);
+                    
+                    // Calculate index
+                    let totalWeight = 0;
+                    trimData.forEach(d => {
+                        switch(d.desempeno) {
+                            case 'SUPERIOR': totalWeight += 4; break;
+                            case 'ALTO': totalWeight += 3; break;
+                            case 'BÁSICO': totalWeight += 2; break;
+                            case 'BAJO': totalWeight += 1; break;
+                        }
+                    });
+                    const currentIndex = (totalWeight / total).toFixed(2);
+                    
+                    // Determine trend
+                    let trend = '➖';
+                    if (index > 0) {
+                        if (parseFloat(currentIndex) > previousIndex) trend = '📈 Mejora';
+                        else if (parseFloat(currentIndex) < previousIndex) trend = '📉 Baja';
+                        else trend = '➖ Sin cambio';
+                    }
+                    
+                    evolutionHTML += `
+                        <tr>
+                            <td><strong>${trim}</strong></td>
+                            <td>${total}</td>
+                            <td style="color: #ff4757;">${bajo}%</td>
+                            <td style="color: #ffa502;">${basico}%</td>
+                            <td style="color: #3742fa;">${alto}%</td>
+                            <td style="color: #2ed573;">${superior}%</td>
+                            <td><strong>${currentIndex}</strong></td>
+                            <td>${trend}</td>
+                        </tr>
+                    `;
+                    
+                    previousIndex = parseFloat(currentIndex);
+                }
+            });
+            
+            evolutionHTML += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            document.getElementById('groupComparisonTable').innerHTML = evolutionHTML;
+            document.getElementById('groupComparisonTable').style.display = 'block';
+        }
+        
+        // Generate subject-specific analysis
+        function generateSubjectAnalysis(grupo, trimestre) {
+            // Show charts
+            const chartsContainer = document.getElementById('advancedChartsContainer');
+            if (chartsContainer) {
+                chartsContainer.style.display = 'block';
+            }
+            
+            // Create subject analysis table
+            const subjectData = [];
+            
+            asignaturas.forEach(subj => {
+                let subjData = allData.filter(d => d.asignatura === subj);
+                if (grupo) subjData = subjData.filter(d => d.grupo === grupo);
+                if (trimestre) subjData = subjData.filter(d => d.trimestre === trimestre);
+                
+                if (subjData.length > 0) {
+                    const total = subjData.length;
+                    const bajo = subjData.filter(d => d.desempeno === 'BAJO').length;
+                    const basico = subjData.filter(d => d.desempeno === 'BÁSICO').length;
+                    const alto = subjData.filter(d => d.desempeno === 'ALTO').length;
+                    const superior = subjData.filter(d => d.desempeno === 'SUPERIOR').length;
+                    
+                    subjectData.push({
+                        asignatura: subj,
+                        total: total,
+                        bajo: bajo,
+                        bajoPct: (bajo / total * 100).toFixed(1),
+                        basico: basico,
+                        basicoPct: (basico / total * 100).toFixed(1),
+                        alto: alto,
+                        altoPct: (alto / total * 100).toFixed(1),
+                        superior: superior,
+                        superiorPct: (superior / total * 100).toFixed(1)
+                    });
+                }
+            });
+            
+            // Sort by difficulty (highest bajo percentage)
+            subjectData.sort((a, b) => parseFloat(b.bajoPct) - parseFloat(a.bajoPct));
+            
+            let subjectHTML = `
+                <h3 style="color: #667eea; margin-bottom: 20px;">
+                    Análisis por Asignatura ${grupo ? `- Grupo ${grupo}` : ''} ${trimestre ? `- ${trimestre}` : ''}
+                </h3>
+                <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+                    <table>
+                        <thead style="position: sticky; top: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); z-index: 10;">
+                            <tr>
+                                <th>Ranking</th>
+                                <th>Asignatura</th>
+                                <th>Bajo</th>
+                                <th>Básico</th>
+                                <th>Alto</th>
+                                <th>Superior</th>
+                                <th>Total</th>
+                                <th>Dificultad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            subjectData.forEach((subj, index) => {
+                // Determine difficulty level
+                let difficulty = '';
+                let difficultyColor = '';
+                if (parseFloat(subj.bajoPct) >= 30) {
+                    difficulty = '🔴 Muy Alta';
+                    difficultyColor = '#ff4757';
+                } else if (parseFloat(subj.bajoPct) >= 20) {
+                    difficulty = '🟠 Alta';
+                    difficultyColor = '#ffa502';
+                } else if (parseFloat(subj.bajoPct) >= 10) {
+                    difficulty = '🟡 Media';
+                    difficultyColor = '#f39c12';
+                } else {
+                    difficulty = '🟢 Baja';
+                    difficultyColor = '#2ed573';
+                }
+                
+                subjectHTML += `
+                    <tr>
+                        <td><strong>${index + 1}</strong></td>
+                        <td><strong>${subj.asignatura}</strong></td>
+                        <td style="color: #ff4757;">${subj.bajo} (${subj.bajoPct}%)</td>
+                        <td style="color: #ffa502;">${subj.basico} (${subj.basicoPct}%)</td>
+                        <td style="color: #3742fa;">${subj.alto} (${subj.altoPct}%)</td>
+                        <td style="color: #2ed573;">${subj.superior} (${subj.superiorPct}%)</td>
+                        <td>${subj.total}</td>
+                        <td style="color: ${difficultyColor}; font-weight: bold;">${difficulty}</td>
+                    </tr>
+                `;
+            });
+            
+            subjectHTML += `
+                        </tbody>
+                    </table>
+                </div>
+                <div style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <p style="margin: 0; color: #666;">
+                        <strong>Leyenda de Dificultad:</strong> 
+                        🔴 Muy Alta (≥30% bajo) | 
+                        🟠 Alta (20-29% bajo) | 
+                        🟡 Media (10-19% bajo) | 
+                        🟢 Baja (<10% bajo)
+                    </p>
+                </div>
+            `;
+            
+            document.getElementById('groupComparisonTable').innerHTML = subjectHTML;
+            document.getElementById('groupComparisonTable').style.display = 'block';
+        }
+        
+        // Generate risk students list
+        function generateRiskStudentsList(studentGrades) {
+            const riskStudents = Object.entries(studentGrades)
+                .filter(([_, grades]) => grades.bajo > 0)
+                .map(([name, grades]) => ({
+                    nombre: name,
+                    grupo: grades.grupo,
+                    bajoCount: grades.bajo,
+                    totalCount: grades.total,
+                    percentage: (grades.bajo / grades.total * 100).toFixed(1)
+                }))
+                .sort((a, b) => b.bajoCount - a.bajoCount)
+                .slice(0, 10);
+            
+            let listHTML = '<div style="max-height: 300px; overflow-y: auto;">';
+            
+            if (riskStudents.length === 0) {
+                listHTML += '<p style="text-align: center; color: #999;">No hay estudiantes en riesgo</p>';
+            } else {
+                riskStudents.forEach((student, index) => {
+                    const riskLevel = student.percentage >= 50 ? 'alto' : student.percentage >= 30 ? 'medio' : 'bajo';
+                    const riskColor = riskLevel === 'alto' ? '#ff4757' : riskLevel === 'medio' ? '#ffa502' : '#f39c12';
+                    
+                    listHTML += `
+                        <div style="
+                            padding: 12px;
+                            margin-bottom: 10px;
+                            background: white;
+                            border-left: 4px solid ${riskColor};
+                            border-radius: 4px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                        ">
+                            <div>
+                                <div style="font-weight: 600; color: #333;">
+                                    ${index + 1}. ${student.nombre}
+                                </div>
+                                <div style="font-size: 12px; color: #666;">
+                                    Grupo: ${student.grupo}
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="
+                                    background: ${riskColor};
+                                    color: white;
+                                    padding: 4px 8px;
+                                    border-radius: 12px;
+                                    font-size: 12px;
+                                    font-weight: 600;
+                                ">
+                                    ${student.bajoCount} bajos (${student.percentage}%)
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            listHTML += '</div>';
+            
+            const container = document.getElementById('riskStudentsList');
+            if (container) {
+                container.innerHTML = listHTML;
+            }
+        }
+
+        // Update advanced charts
+        function updateAdvancedCharts() {
+            // Trend chart
+            const trendCtx = document.getElementById('trendChart').getContext('2d');
+            
+            const trendData = {
+                labels: trimestres,
+                datasets: [{
+                    label: '% Desempeño Bajo',
+                    data: trimestres.map(t => {
+                        const trimData = allData.filter(d => d.trimestre === t);
+                        return trimData.length > 0 ? 
+                            (trimData.filter(d => d.desempeno === 'BAJO').length / trimData.length * 100).toFixed(1) : 0;
+                    }),
+                    borderColor: '#ff4757',
+                    tension: 0.4
+                }]
+            };
+            
+            new Chart(trendCtx, {
+                type: 'line',
+                data: trendData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+            
+            // Difficulty chart
+            const difficultyCtx = document.getElementById('difficultyChart').getContext('2d');
+            
+            const difficultyBySubject = {};
+            asignaturas.forEach(subj => {
+                const subjData = allData.filter(d => d.asignatura === subj);
+                if (subjData.length > 0) {
+                    const bajoCount = subjData.filter(d => d.desempeno === 'BAJO').length;
+                    difficultyBySubject[subj] = (bajoCount / subjData.length * 100).toFixed(1);
+                }
+            });
+            
+            // Sort by difficulty and get top 10
+            const sortedDifficulty = Object.entries(difficultyBySubject)
+                .sort((a, b) => parseFloat(b[1]) - parseFloat(a[1]))
+                .slice(0, 10);
+            
+            const difficultyData = {
+                labels: sortedDifficulty.map(d => d[0]),
+                datasets: [{
+                    label: '% Desempeño Bajo',
+                    data: sortedDifficulty.map(d => parseFloat(d[1])),
+                    backgroundColor: '#ff4757'
+                }]
+            };
+            
+            new Chart(difficultyCtx, {
+                type: 'bar',
+                data: difficultyData,
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        // Generate Student Summary - Enhanced version with better formatting
+        function generateStudentSummary() {
+            const grupo = document.getElementById('filterGrupoResumen').value;
+            const trimestre = document.getElementById('filterTrimestreResumen').value;
+            const ordenPor = document.getElementById('filterOrdenResumen').value || 'nombre';
+            const searchTerm = document.getElementById('searchEstudiante').value.toLowerCase();
+            
+            // Filter data for students with BAJO
+            let bajoData = allData.filter(d => d.desempeno === 'BAJO');
+            
+            // Apply filters
+            if (grupo) bajoData = bajoData.filter(d => d.grupo === grupo);
+            if (trimestre) bajoData = bajoData.filter(d => d.trimestre === trimestre);
+            
+            // Group by student
+            const studentMap = {};
+            bajoData.forEach(d => {
+                const studentKey = d.estudiante;
+                if (!studentMap[studentKey]) {
+                    studentMap[studentKey] = {
+                        nombre: d.estudiante,
+                        apellidos: d.apellidos,
+                        nombres: d.nombres,
+                        grupo: d.grupo,
+                        asignaturasMap: {}
+                    };
+                }
+                
+                // Create unique key for subject-trimester combination
+                const subjectKey = `${d.asignatura}_${d.trimestre}`;
+                if (!studentMap[studentKey].asignaturasMap[subjectKey]) {
+                    studentMap[studentKey].asignaturasMap[subjectKey] = {
+                        asignatura: d.asignatura,
+                        trimestre: d.trimestre,
+                        desempeno: d.desempeno
+                    };
+                }
+            });
+            
+            // Convert to array and process
+            let studentsArray = Object.values(studentMap).map(student => {
+                student.asignaturas = Object.values(student.asignaturasMap);
+                delete student.asignaturasMap;
+                return student;
+            });
+            
+            // Apply search filter
+            if (searchTerm) {
+                studentsArray = studentsArray.filter(student => 
+                    student.nombre.toLowerCase().includes(searchTerm) ||
+                    student.grupo.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            // Sort based on selected criteria
+            studentsArray.sort((a, b) => {
+                switch(ordenPor) {
+                    case 'cantidad':
+                        return b.asignaturas.length - a.asignaturas.length;
+                    case 'grupo':
+                        const grupoCompare = a.grupo.localeCompare(b.grupo);
+                        if (grupoCompare !== 0) return grupoCompare;
+                        return a.nombre.localeCompare(b.nombre);
+                    default: // 'nombre'
+                        return a.nombre.localeCompare(b.nombre);
+                }
+            });
+            
+            // Calculate statistics
+            const totalStudentsWithBajo = studentsArray.length;
+            const totalBajoSubjects = studentsArray.reduce((sum, s) => sum + s.asignaturas.length, 0);
+            const averageBajosPerStudent = totalStudentsWithBajo > 0 ? 
+                (totalBajoSubjects / totalStudentsWithBajo).toFixed(1) : 0;
+            
+            // Find student with most bajos
+            const maxBajosStudent = studentsArray.length > 0 ? 
+                studentsArray.reduce((max, s) => s.asignaturas.length > max.asignaturas.length ? s : max) : null;
+            
+            // Generate HTML with enhanced format
+            let html = `
+                <div class="summary-stats-header">
+                    <div class="summary-stat-item">
+                        <div class="summary-stat-value">${totalStudentsWithBajo}</div>
+                        <div class="summary-stat-label">Estudiantes con Bajo</div>
+                    </div>
+                    <div class="summary-stat-item">
+                        <div class="summary-stat-value">${totalBajoSubjects}</div>
+                        <div class="summary-stat-label">Total Asignaturas en Bajo</div>
+                    </div>
+                    <div class="summary-stat-item">
+                        <div class="summary-stat-value">${averageBajosPerStudent}</div>
+                        <div class="summary-stat-label">Promedio Bajos por Estudiante</div>
+                    </div>
+                    ${maxBajosStudent ? `
+                        <div class="summary-stat-item">
+                            <div class="summary-stat-value">${maxBajosStudent.asignaturas.length}</div>
+                            <div class="summary-stat-label">Máximo de Bajos</div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            if (studentsArray.length === 0) {
+                html += `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎉</div>
+                        <h3>¡Excelente!</h3>
+                        <p>No hay estudiantes con desempeño bajo ${grupo ? `en el grupo ${grupo}` : ''} 
+                           ${trimestre ? `para ${trimestre}` : ''}</p>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div id="studentSummaryList" style="margin-top: 20px;">
+                        <div style="background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
+                            <table style="width: 100%; border-collapse: separate; border-spacing: 0;">
+                                <thead>
+                                    <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                                        <th style="padding: 12px; text-align: left; border-radius: 8px 0 0 0;">Estudiante</th>
+                                        <th style="padding: 12px; text-align: left;">Grupo</th>
+                                        <th style="padding: 12px; text-align: left;">Grado</th>
+                                        <th style="padding: 12px; text-align: left; border-radius: 0 8px 0 0;">Asignaturas en Bajo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                `;
+                
+                studentsArray.forEach((student, index) => {
+                    const grado = student.grupo.split('-')[0];
+                    const bgColor = index % 2 === 0 ? '#f8f9fa' : '#ffffff';
+                    
+                    // Group subjects by trimester for better display
+                    const subjectsByTrimester = {};
+                    student.asignaturas.forEach(a => {
+                        if (!subjectsByTrimester[a.trimestre]) {
+                            subjectsByTrimester[a.trimestre] = [];
+                        }
+                        subjectsByTrimester[a.trimestre].push(a.asignatura);
+                    });
+                    
+                    // Create subjects display string
+                    let subjectsDisplay = [];
+                    Object.entries(subjectsByTrimester).forEach(([trim, subjects]) => {
+                        if (trimestre) {
+                            // If filtering by trimester, don't show trimester label
+                            subjectsDisplay = subjectsDisplay.concat(subjects);
+                        } else {
+                            // Show trimester label if showing all trimesters
+                            subjects.forEach(subj => {
+                                subjectsDisplay.push(`${subj} (${trim})`);
+                            });
+                        }
+                    });
+                    
+                    html += `
+                        <tr style="background: ${bgColor}; border-bottom: 1px solid #e0e0e0;">
+                            <td style="padding: 15px; font-weight: 600; color: #333;">
+                                ${student.nombre}
+                            </td>
+                            <td style="padding: 15px; color: #666;">
+                                ${student.grupo}
+                            </td>
+                            <td style="padding: 15px; color: #666;">
+                                ${grado}
+                            </td>
+                            <td style="padding: 15px;">
+                                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                    ${subjectsDisplay.map(subj => `
+                                        <span style="
+                                            background: rgba(255, 71, 87, 0.1);
+                                            color: #ff4757;
+                                            padding: 6px 12px;
+                                            border-radius: 16px;
+                                            font-size: 13px;
+                                            border: 1px solid rgba(255, 71, 87, 0.3);
+                                            display: inline-block;
+                                        ">
+                                            ${subj}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                                <div style="margin-top: 8px; color: #999; font-size: 12px;">
+                                    Total: ${student.asignaturas.length} ${student.asignaturas.length === 1 ? 'asignatura' : 'asignaturas'}
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                
+                // Alternative card view (commented out, but available if needed)
+                html += `
+                    <div style="margin-top: 30px;">
+                        <h4 style="color: #667eea; margin-bottom: 15px;">Vista Detallada por Estudiante</h4>
+                        <div style="display: grid; gap: 15px;">
+                `;
+                
+                studentsArray.slice(0, 10).forEach(student => {
+                    const grado = student.grupo.split('-')[0];
+                    
+                    html += `
+                        <div style="
+                            background: white;
+                            border-radius: 10px;
+                            padding: 20px;
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                            border-left: 4px solid #ff4757;
+                        ">
+                            <div style="font-size: 18px; font-weight: 600; color: #333; margin-bottom: 8px;">
+                                ${student.nombre}
+                            </div>
+                            <div style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                                Grupo: ${student.grupo} | Grado: ${grado}
+                            </div>
+                            <div style="
+                                background: #f8f9fa;
+                                padding: 15px;
+                                border-radius: 8px;
+                                border-left: 3px solid #ff4757;
+                            ">
+                                ${student.asignaturas.map(a => `
+                                    <span style="
+                                        color: #ff4757;
+                                        font-weight: 500;
+                                    ">
+                                        ${a.asignatura}
+                                    </span>
+                                    ${!trimestre ? `<span style="color: #999; font-size: 12px;"> (${a.trimestre})</span>` : ''}
+                                `).join(' | ')}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                if (studentsArray.length > 10) {
+                    html += `
+                        <div style="text-align: center; padding: 20px; color: #666;">
+                            ... y ${studentsArray.length - 10} estudiantes más
+                        </div>
+                    `;
+                }
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += `
+                <div class="export-buttons" style="margin-top: 20px;">
+                    <button class="btn btn-success" onclick="exportStudentSummary('excel')">
+                        📊 Exportar a Excel
+                    </button>
+                    <button class="btn btn-primary" onclick="exportStudentSummary('pdf')">
+                        📄 Exportar a PDF
+                    </button>
+                    <button class="btn btn-info" onclick="printStudentSummary()">
+                        🖨️ Imprimir Resumen
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('studentSummaryContent').innerHTML = html;
+        }
+        
+        // Export Student Summary
+        function exportStudentSummary(format) {
+            const grupo = document.getElementById('filterGrupoResumen').value;
+            const trimestre = document.getElementById('filterTrimestreResumen').value;
+            const schoolName = document.getElementById('schoolNameInput').value || 'INSTITUCIÓN EDUCATIVA';
+            
+            // Get filtered data
+            let bajoData = allData.filter(d => d.desempeno === 'BAJO');
+            if (grupo) bajoData = bajoData.filter(d => d.grupo === grupo);
+            if (trimestre) bajoData = bajoData.filter(d => d.trimestre === trimestre);
+            
+            // Group by student
+            const studentMap = {};
+            bajoData.forEach(d => {
+                if (!studentMap[d.estudiante]) {
+                    studentMap[d.estudiante] = {
+                        nombre: d.estudiante,
+                        grupo: d.grupo,
+                        asignaturas: []
+                    };
+                }
+                const subjectInfo = `${d.asignatura} (${d.trimestre})`;
+                if (!studentMap[d.estudiante].asignaturas.includes(subjectInfo)) {
+                    studentMap[d.estudiante].asignaturas.push(subjectInfo);
+                }
+            });
+            
+            const studentsArray = Object.values(studentMap).sort((a, b) => 
+                b.asignaturas.length - a.asignaturas.length
+            );
+            
+            if (format === 'excel') {
+                const wb = XLSX.utils.book_new();
+                const wsData = [
+                    [schoolName],
+                    ['RESUMEN DE ESTUDIANTES CON DESEMPEÑO BAJO'],
+                    [`Filtros: ${grupo || 'Todos los grupos'} | ${trimestre || 'Todos los trimestres'}`],
+                    [`Fecha: ${new Date().toLocaleDateString()}`],
+                    [],
+                    ['Estudiante', 'Grupo', 'Grado', 'Cantidad de Bajos', 'Asignaturas en Bajo']
+                ];
+                
+                studentsArray.forEach(student => {
+                    const grado = student.grupo.split('-')[0];
+                    wsData.push([
+                        student.nombre,
+                        student.grupo,
+                        grado,
+                        student.asignaturas.length,
+                        student.asignaturas.join(' | ')
+                    ]);
+                });
+                
+                const ws = XLSX.utils.aoa_to_sheet(wsData);
+                XLSX.utils.book_append_sheet(wb, ws, 'Resumen Estudiantes');
+                XLSX.writeFile(wb, `Resumen_Estudiantes_Bajo_${new Date().toISOString().slice(0,10)}.xlsx`);
+            } else {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Header
+                doc.setFontSize(20);
+                doc.setTextColor(102, 126, 234);
+                doc.text(schoolName, 105, 20, { align: 'center' });
+                
+                doc.setFontSize(14);
+                doc.text('RESUMEN DE ESTUDIANTES CON DESEMPEÑO BAJO', 105, 35, { align: 'center' });
+                
+                doc.setFontSize(10);
+                doc.setTextColor(100);
+                doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 105, 45, { align: 'center' });
+                
+                // Table data
+                const tableData = studentsArray.map(student => [
+                    student.nombre,
+                    student.grupo,
+                    student.asignaturas.length.toString(),
+                    student.asignaturas.slice(0, 3).join(', ') + (student.asignaturas.length > 3 ? '...' : '')
+                ]);
+                
+                doc.autoTable({
+                    head: [['Estudiante', 'Grupo', '# Bajos', 'Asignaturas']],
+                    body: tableData,
+                    startY: 55,
+                    theme: 'grid',
+                    headStyles: { fillColor: [102, 126, 234] },
+                    columnStyles: {
+                        0: { cellWidth: 60 },
+                        1: { cellWidth: 30 },
+                        2: { cellWidth: 20 },
+                        3: { cellWidth: 80 }
+                    }
+                });
+                
+                doc.save(`Resumen_Estudiantes_Bajo_${new Date().toISOString().slice(0,10)}.pdf`);
+            }
+        }
+        
+        // Print Student Summary
+        function printStudentSummary() {
+            const content = document.getElementById('studentSummaryContent').innerHTML;
+            const printWindow = window.open('', '', 'height=600,width=800');
+            
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Resumen de Estudiantes con Bajo</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        .student-summary-card { 
+                            border: 1px solid #ddd; 
+                            padding: 15px; 
+                            margin-bottom: 10px; 
+                            page-break-inside: avoid;
+                        }
+                        .student-name { font-weight: bold; font-size: 16px; }
+                        .student-group { color: #666; font-size: 12px; }
+                        .subject-bajo-chip { 
+                            display: inline-block; 
+                            margin: 3px; 
+                            padding: 5px 10px; 
+                            background: #ffe0e0; 
+                            border-radius: 12px;
+                            font-size: 12px;
+                        }
+                        .export-buttons { display: none; }
+                        @media print {
+                            .summary-stats-header { 
+                                background: #f0f0f0 !important; 
+                                color: #000 !important;
+                                -webkit-print-color-adjust: exact;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h2>Resumen de Estudiantes con Desempeño Bajo</h2>
+                    ${content}
+                </body>
+                </html>
+            `);
+            
+            printWindow.document.close();
+            printWindow.focus();
+            
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 250);
+        }
+        function generateGroupReport() {
+            const grupo = document.getElementById('filterGrupoReport').value;
+            const trimestre = document.getElementById('filterTrimestreReport').value;
+            const desempeno = document.getElementById('filterDesempenoReport').value;
+            const asignatura = document.getElementById('filterAsignaturaReport').value;
+            
+            console.log('Applying filters:', { grupo, trimestre, desempeno, asignatura });
+            
+            if (!grupo) {
+                document.getElementById('groupReportContent').innerHTML = 
+                    '<div class="empty-state"><p>Seleccione un grupo para generar el reporte</p></div>';
+                return;
+            }
+            
+            // Apply all filters
+            let filteredData = allData.filter(d => d.grupo === grupo);
+            console.log('After group filter:', filteredData.length, 'records');
+            
+            if (trimestre && trimestre !== '') {
+                filteredData = filteredData.filter(d => d.trimestre === trimestre);
+                console.log('After trimester filter:', filteredData.length, 'records');
+            }
+            
+            if (desempeno && desempeno !== '') {
+                filteredData = filteredData.filter(d => d.desempeno === desempeno);
+                console.log('After performance filter:', filteredData.length, 'records');
+            }
+            
+            if (asignatura && asignatura !== '') {
+                filteredData = filteredData.filter(d => d.asignatura === asignatura);
+                console.log('After subject filter:', filteredData.length, 'records');
+            }
+            
+            // Get unique students in filtered data
+            const students = [...new Set(filteredData.map(d => d.estudiante))].sort();
+            
+            // Calculate statistics for the filtered data
+            const totalGrades = filteredData.length;
+            const stats = {
+                bajo: filteredData.filter(d => d.desempeno === 'BAJO').length,
+                basico: filteredData.filter(d => d.desempeno === 'BÁSICO').length,
+                alto: filteredData.filter(d => d.desempeno === 'ALTO').length,
+                superior: filteredData.filter(d => d.desempeno === 'SUPERIOR').length
+            };
+            
+            // Generate summary text based on filters
+            let filterSummary = `Grupo: ${grupo}`;
+            if (trimestre) filterSummary += ` | ${trimestre}`;
+            if (desempeno) filterSummary += ` | Desempeño: ${desempeno}`;
+            if (asignatura) filterSummary += ` | Asignatura: ${asignatura}`;
+            
+            const reportHTML = `
+                <div style="margin-top: 20px;">
+                    <h3 style="color: #667eea; margin-bottom: 10px;">Reporte del Grupo: ${grupo}</h3>
+                    <p style="color: #666; margin-bottom: 20px; font-size: 14px;">${filterSummary}</p>
+                    
+                    ${totalGrades > 0 ? `
+                        <div class="dashboard-grid" style="margin-bottom: 30px;">
+                            <div class="stat-card">
+                                <h3>Total Estudiantes</h3>
+                                <div class="stat-value">${students.length}</div>
+                                ${!desempeno && !asignatura ? 
+                                    `<div class="stat-detail">${totalGrades} calificaciones</div>` : 
+                                    `<div class="stat-detail">${totalGrades} registros</div>`
+                                }
+                            </div>
+                            ${!desempeno ? `
+                                <div class="stat-card" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);">
+                                    <h3>Desempeño Bajo</h3>
+                                    <div class="stat-value">${stats.bajo}</div>
+                                    <div class="stat-detail">${totalGrades > 0 ? (stats.bajo / totalGrades * 100).toFixed(1) : 0}%</div>
+                                </div>
+                                <div class="stat-card" style="background: linear-gradient(135deg, #feca57 0%, #ff9ff3 100%);">
+                                    <h3>Desempeño Básico</h3>
+                                    <div class="stat-value">${stats.basico}</div>
+                                    <div class="stat-detail">${totalGrades > 0 ? (stats.basico / totalGrades * 100).toFixed(1) : 0}%</div>
+                                </div>
+                                <div class="stat-card" style="background: linear-gradient(135deg, #48dbfb 0%, #0abde3 100%);">
+                                    <h3>Desempeño Alto</h3>
+                                    <div class="stat-value">${stats.alto}</div>
+                                    <div class="stat-detail">${totalGrades > 0 ? (stats.alto / totalGrades * 100).toFixed(1) : 0}%</div>
+                                </div>
+                                <div class="stat-card" style="background: linear-gradient(135deg, #1dd1a1 0%, #10ac84 100%);">
+                                    <h3>Desempeño Superior</h3>
+                                    <div class="stat-value">${stats.superior}</div>
+                                    <div class="stat-detail">${totalGrades > 0 ? (stats.superior / totalGrades * 100).toFixed(1) : 0}%</div>
+                                </div>
+                            ` : desempeno === 'BAJO' ? `
+                                <div class="stat-card" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);">
+                                    <h3>Filtrado: Desempeño Bajo</h3>
+                                    <div class="stat-value">${stats.bajo}</div>
+                                    <div class="stat-detail">100% (filtrado)</div>
+                                </div>
+                            ` : desempeno === 'BÁSICO' ? `
+                                <div class="stat-card" style="background: linear-gradient(135deg, #feca57 0%, #ff9ff3 100%);">
+                                    <h3>Filtrado: Desempeño Básico</h3>
+                                    <div class="stat-value">${stats.basico}</div>
+                                    <div class="stat-detail">100% (filtrado)</div>
+                                </div>
+                            ` : desempeno === 'ALTO' ? `
+                                <div class="stat-card" style="background: linear-gradient(135deg, #48dbfb 0%, #0abde3 100%);">
+                                    <h3>Filtrado: Desempeño Alto</h3>
+                                    <div class="stat-value">${stats.alto}</div>
+                                    <div class="stat-detail">100% (filtrado)</div>
+                                </div>
+                            ` : desempeno === 'SUPERIOR' ? `
+                                <div class="stat-card" style="background: linear-gradient(135deg, #1dd1a1 0%, #10ac84 100%);">
+                                    <h3>Filtrado: Desempeño Superior</h3>
+                                    <div class="stat-value">${stats.superior}</div>
+                                    <div class="stat-detail">100% (filtrado)</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Estudiante</th>
+                                        <th>Asignatura</th>
+                                        <th>Trimestre</th>
+                                        <th>Desempeño</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${filteredData.sort((a, b) => {
+                                        // Sort first by student name, then by subject
+                                        const nameCompare = a.estudiante.localeCompare(b.estudiante);
+                                        if (nameCompare !== 0) return nameCompare;
+                                        return a.asignatura.localeCompare(b.asignatura);
+                                    }).map(d => `
+                                        <tr>
+                                            <td>${d.estudiante}</td>
+                                            <td>${d.asignatura}</td>
+                                            <td>${d.trimestre}</td>
+                                            <td>
+                                                <span class="desempeno-badge desempeno-${d.desempeno.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}">
+                                                    ${d.desempeno}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="export-buttons">
+                            <button class="btn btn-success" onclick="exportFilteredGroupReport('excel')">
+                                📊 Exportar a Excel
+                            </button>
+                            <button class="btn btn-primary" onclick="exportFilteredGroupReport('pdf')">
+                                📄 Exportar a PDF
+                            </button>
+                        </div>
+                    ` : `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🔍</div>
+                            <h3>No se encontraron datos</h3>
+                            <p>No hay registros que coincidan con los filtros seleccionados</p>
+                            <p style="margin-top: 10px; font-size: 14px; color: #999;">
+                                Intente cambiar los filtros para ver más resultados
+                            </p>
+                        </div>
+                    `}
+                </div>
+            `;
+            
+            document.getElementById('groupReportContent').innerHTML = reportHTML;
+        }
+        
+        // Export filtered group report
+        function exportFilteredGroupReport(format) {
+            const grupo = document.getElementById('filterGrupoReport').value;
+            const trimestre = document.getElementById('filterTrimestreReport').value;
+            const desempeno = document.getElementById('filterDesempenoReport').value;
+            const asignatura = document.getElementById('filterAsignaturaReport').value;
+            
+            // Apply same filters as in generateGroupReport
+            let filteredData = allData.filter(d => d.grupo === grupo);
+            if (trimestre) filteredData = filteredData.filter(d => d.trimestre === trimestre);
+            if (desempeno) filteredData = filteredData.filter(d => d.desempeno === desempeno);
+            if (asignatura) filteredData = filteredData.filter(d => d.asignatura === asignatura);
+            
+            const schoolName = document.getElementById('schoolNameInput').value || 'INSTITUCIÓN EDUCATIVA';
+            
+            if (format === 'excel') {
+                const wb = XLSX.utils.book_new();
+                const wsData = [
+                    [`${schoolName}`],
+                    [`Reporte del Grupo: ${grupo}`],
+                    [`Filtros aplicados: ${trimestre || 'Todos los trimestres'} | ${desempeno || 'Todos los desempeños'} | ${asignatura || 'Todas las asignaturas'}`],
+                    [],
+                    ['Estudiante', 'Asignatura', 'Trimestre', 'Desempeño']
+                ];
+                
+                filteredData.sort((a, b) => a.estudiante.localeCompare(b.estudiante)).forEach(d => {
+                    wsData.push([d.estudiante, d.asignatura, d.trimestre, d.desempeno]);
+                });
+                
+                const ws = XLSX.utils.aoa_to_sheet(wsData);
+                XLSX.utils.book_append_sheet(wb, ws, 'Reporte Filtrado');
+                XLSX.writeFile(wb, `Reporte_${grupo}_${new Date().toISOString().slice(0,10)}.xlsx`);
+            } else {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Header
+                doc.setFontSize(20);
+                doc.setTextColor(102, 126, 234);
+                doc.text(schoolName, 105, 20, { align: 'center' });
+                
+                doc.setFontSize(14);
+                doc.text(`Reporte del Grupo: ${grupo}`, 105, 35, { align: 'center' });
+                
+                doc.setFontSize(10);
+                doc.setTextColor(100);
+                const filterText = `Filtros: ${trimestre || 'Todos'} | ${desempeno || 'Todos'} | ${asignatura || 'Todas'}`;
+                doc.text(filterText, 105, 45, { align: 'center' });
+                
+                // Table
+                const tableData = filteredData.map(d => [
+                    d.estudiante,
+                    d.asignatura,
+                    d.trimestre,
+                    d.desempeno
+                ]);
+                
+                doc.autoTable({
+                    head: [['Estudiante', 'Asignatura', 'Trimestre', 'Desempeño']],
+                    body: tableData,
+                    startY: 55,
+                    theme: 'grid',
+                    headStyles: { fillColor: [102, 126, 234] }
+                });
+                
+                doc.save(`Reporte_${grupo}_${new Date().toISOString().slice(0,10)}.pdf`);
+            }
+        }
+
+        // Switch tabs
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // Export to Excel
+        function exportToExcel(type) {
+            const wb = XLSX.utils.book_new();
+            let ws;
+            
+            const schoolName = document.getElementById('schoolNameInput').value || 'INSTITUCIÓN EDUCATIVA';
+            const year = document.getElementById('yearInput').value || new Date().getFullYear();
+            
+            switch(type) {
+                case 'bajo':
+                    ws = XLSX.utils.table_to_sheet(document.getElementById('tableBajo'));
+                    XLSX.utils.book_append_sheet(wb, ws, 'Estudiantes con Bajo');
+                    break;
+                    
+                case 'stats':
+                    ws = XLSX.utils.table_to_sheet(document.getElementById('tableStats'));
+                    XLSX.utils.book_append_sheet(wb, ws, 'Estadísticas');
+                    break;
+                    
+                case 'advanced':
+                    // Create advanced analysis worksheet
+                    const advancedData = [
+                        [schoolName],
+                        [`Análisis Avanzado - ${year}`],
+                        [],
+                        ['Métrica', 'Valor'],
+                        ['Tasa de Reprobación', document.getElementById('failureRate').textContent],
+                        ['Promedio de Excelencia', document.getElementById('excellenceRate').textContent],
+                        ['Mejora Entre Períodos', document.getElementById('improvementRate').textContent],
+                        [],
+                        ['Asignatura', 'Estudiantes', 'Bajo', '% Bajo', 'Básico', '% Básico', 'Alto', '% Alto', 'Superior', '% Superior']
+                    ];
+                    
+                    asignaturas.forEach(subj => {
+                        const subjData = allData.filter(d => d.asignatura === subj);
+                        if (subjData.length > 0) {
+                            const total = subjData.length;
+                            const bajo = subjData.filter(d => d.desempeno === 'BAJO').length;
+                            const basico = subjData.filter(d => d.desempeno === 'BÁSICO').length;
+                            const alto = subjData.filter(d => d.desempeno === 'ALTO').length;
+                            const superior = subjData.filter(d => d.desempeno === 'SUPERIOR').length;
+                            
+                            advancedData.push([
+                                subj,
+                                total,
+                                bajo,
+                                (bajo/total*100).toFixed(1) + '%',
+                                basico,
+                                (basico/total*100).toFixed(1) + '%',
+                                alto,
+                                (alto/total*100).toFixed(1) + '%',
+                                superior,
+                                (superior/total*100).toFixed(1) + '%'
+                            ]);
+                        }
+                    });
+                    
+                    ws = XLSX.utils.aoa_to_sheet(advancedData);
+                    XLSX.utils.book_append_sheet(wb, ws, 'Análisis Avanzado');
+                    break;
+            }
+            
+            // Save file
+            XLSX.writeFile(wb, `${schoolName}_Reporte_${type}_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+
+        // Export to PDF
+        function exportToPDF(type) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const schoolName = document.getElementById('schoolNameInput').value || 'INSTITUCIÓN EDUCATIVA';
+            const year = document.getElementById('yearInput').value || new Date().getFullYear();
+            
+            // Add header
+            doc.setFontSize(20);
+            doc.setTextColor(102, 126, 234);
+            doc.text(schoolName, 105, 20, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.setTextColor(100);
+            doc.text(`Reporte Académico - ${year}`, 105, 30, { align: 'center' });
+            
+            // Add logo if available
+            const logo = document.getElementById('schoolLogo');
+            if (logo.src && logo.style.display !== 'none') {
+                doc.addImage(logo.src, 'PNG', 10, 10, 30, 30);
+            }
+            
+            // Add content based on type
+            switch(type) {
+                case 'bajo':
+                    doc.setFontSize(14);
+                    doc.text('Estudiantes con Desempeño Bajo', 105, 50, { align: 'center' });
+                    
+                    const bajoData = [];
+                    document.querySelectorAll('#tableBajoBody tr').forEach(row => {
+                        const cells = row.querySelectorAll('td');
+                        bajoData.push([
+                            cells[0].textContent,
+                            cells[1].textContent,
+                            cells[2].textContent,
+                            cells[3].textContent
+                        ]);
+                    });
+                    
+                    doc.autoTable({
+                        head: [['Estudiante', 'Grupo', 'Asignatura', 'Trimestre']],
+                        body: bajoData,
+                        startY: 60,
+                        theme: 'grid',
+                        headStyles: { fillColor: [102, 126, 234] }
+                    });
+                    break;
+                    
+                case 'stats':
+                    doc.setFontSize(14);
+                    doc.text('Estadísticas por Asignatura', 105, 50, { align: 'center' });
+                    
+                    const statsData = [];
+                    document.querySelectorAll('#tableStatsBody tr').forEach(row => {
+                        const cells = row.querySelectorAll('td');
+                        statsData.push([
+                            cells[0].textContent,
+                            cells[1].textContent + ' (' + cells[2].textContent + ')',
+                            cells[3].textContent + ' (' + cells[4].textContent + ')',
+                            cells[5].textContent + ' (' + cells[6].textContent + ')',
+                            cells[7].textContent + ' (' + cells[8].textContent + ')'
+                        ]);
+                    });
+                    
+                    doc.autoTable({
+                        head: [['Asignatura', 'Bajo', 'Básico', 'Alto', 'Superior']],
+                        body: statsData,
+                        startY: 60,
+                        theme: 'grid',
+                        headStyles: { fillColor: [102, 126, 234] }
+                    });
+                    break;
+                    
+                case 'advanced':
+                    doc.setFontSize(14);
+                    doc.text('Análisis Avanzado', 105, 50, { align: 'center' });
+                    
+                    // Add key metrics
+                    doc.setFontSize(12);
+                    doc.text(`Tasa de Reprobación: ${document.getElementById('failureRate').textContent}`, 20, 70);
+                    doc.text(`Promedio de Excelencia: ${document.getElementById('excellenceRate').textContent}`, 20, 80);
+                    doc.text(`Mejora Entre Períodos: ${document.getElementById('improvementRate').textContent}`, 20, 90);
+                    
+                    // Add top difficulty subjects
+                    const difficultyData = [];
+                    asignaturas.forEach(subj => {
+                        const subjData = allData.filter(d => d.asignatura === subj);
+                        if (subjData.length > 0) {
+                            const bajoCount = subjData.filter(d => d.desempeno === 'BAJO').length;
+                            difficultyData.push({
+                                subject: subj,
+                                difficulty: (bajoCount / subjData.length * 100).toFixed(1)
+                            });
+                        }
+                    });
+                    
+                    difficultyData.sort((a, b) => parseFloat(b.difficulty) - parseFloat(a.difficulty));
+                    
+                    doc.text('Top 10 Asignaturas con Mayor Dificultad:', 20, 110);
+                    
+                    const topDifficulty = difficultyData.slice(0, 10).map(d => [d.subject, d.difficulty + '%']);
+                    
+                    doc.autoTable({
+                        head: [['Asignatura', '% Desempeño Bajo']],
+                        body: topDifficulty,
+                        startY: 120,
+                        theme: 'grid',
+                        headStyles: { fillColor: [102, 126, 234] }
+                    });
+                    break;
+            }
+            
+            // Add footer
+            const pageCount = doc.internal.getNumberOfPages();
+            for(let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(10);
+                doc.setTextColor(150);
+                doc.text(`Página ${i} de ${pageCount}`, 105, 285, { align: 'center' });
+                doc.text(`Generado: ${new Date().toLocaleString()}`, 105, 290, { align: 'center' });
+            }
+            
+            // Save PDF
+            doc.save(`${schoolName}_Reporte_${type}_${new Date().toISOString().slice(0,10)}.pdf`);
+        }
+
+        // Export group report
+        function exportGroupReport(format, groupName) {
+            const filteredData = allData.filter(d => d.grupo === groupName);
+            
+            if (format === 'excel') {
+                const wb = XLSX.utils.book_new();
+                const wsData = [
+                    [`Reporte del Grupo: ${groupName}`],
+                    [],
+                    ['Estudiante', 'Asignatura', 'Trimestre', 'Desempeño']
+                ];
+                
+                filteredData.forEach(d => {
+                    wsData.push([d.estudiante, d.asignatura, d.trimestre, d.desempeno]);
+                });
+                
+                const ws = XLSX.utils.aoa_to_sheet(wsData);
+                XLSX.utils.book_append_sheet(wb, ws, groupName);
+                XLSX.writeFile(wb, `Reporte_${groupName}_${new Date().toISOString().slice(0,10)}.xlsx`);
+            } else {
+                exportToPDF('group');
+            }
+        }
+
+        // Save analysis
+        function saveAnalysis() {
+            if (allData.length === 0) {
+                showMessage('No hay datos para guardar', 'error');
+                return;
+            }
+            
+            const analysisData = {
+                data: allData,
+                schoolName: document.getElementById('schoolNameInput').value,
+                year: document.getElementById('yearInput').value,
+                timestamp: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(analysisData);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `analisis_${new Date().toISOString().slice(0,10)}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            showMessage('Análisis guardado exitosamente', 'success');
+        }
+
+        // Load analysis
+        function loadAnalysis() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = function(event) {
+                    try {
+                        const analysisData = JSON.parse(event.target.result);
+                        
+                        // Load data
+                        allData = analysisData.data || [];
+                        
+                        // Load school info
+                        if (analysisData.schoolName) {
+                            document.getElementById('schoolNameInput').value = analysisData.schoolName;
+                            document.getElementById('schoolNameDisplay').textContent = analysisData.schoolName;
+                        }
+                        if (analysisData.year) {
+                            document.getElementById('yearInput').value = analysisData.year;
+                        }
+                        
+                        // Update unique values
+                        grupos = [...new Set(allData.map(d => d.grupo))].sort();
+                        asignaturas = [...new Set(allData.map(d => d.asignatura))].sort();
+                        trimestres = [...new Set(allData.map(d => d.trimestre))].sort();
+                        
+                        // Update UI
+                        updateUI();
+                        
+                        showMessage('Análisis cargado exitosamente', 'success');
+                    } catch (error) {
+                        showMessage('Error al cargar el análisis', 'error');
+                    }
+                };
+                
+                reader.readAsText(file);
+            };
+            
+            input.click();
+        }
+
+        // Load logo
+        function loadLogo(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('schoolLogo').src = e.target.result;
+                    document.getElementById('schoolLogo').style.display = 'block';
+                    document.getElementById('logoPlaceholder').style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Update school name
+        function updateSchoolName() {
+            const name = document.getElementById('schoolNameInput').value;
+            if (name) {
+                document.getElementById('schoolNameDisplay').textContent = name;
+            }
+        }
+
+        // Show message with automatic hide
+        function showMessage(message, type) {
+            // Remove any existing message
+            const existingAlert = document.querySelector('.alert-message');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+            
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert-message';
+            alertDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 8px;
+                color: white;
+                font-weight: 600;
+                z-index: 9999;
+                max-width: 400px;
+                animation: slideIn 0.3s ease;
+                background: ${type === 'success' ? 'linear-gradient(135deg, #2ed573 0%, #00b894 100%)' : 
+                             type === 'info' ? 'linear-gradient(135deg, #00d2d3 0%, #54a0ff 100%)' :
+                             'linear-gradient(135deg, #ff4757 0%, #ee5a24 100%)'};
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            `;
+            alertDiv.textContent = message;
+            
+            document.body.appendChild(alertDiv);
+            
+            // Hide after 4 seconds for info messages, 3 for others
+            const timeout = type === 'info' ? 4000 : 3000;
+            setTimeout(() => {
+                alertDiv.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => alertDiv.remove(), 300);
+            }, timeout);
+        }
+
+        // Show empty state
+        function showEmptyState() {
+            const dashboardCards = document.getElementById('dashboardCards');
+            dashboardCards.innerHTML = `
+                <div class="empty-state" style="grid-column: 1 / -1;">
+                    <div class="empty-state-icon">📊</div>
+                    <h3>No hay datos disponibles</h3>
+                    <p>Por favor, cargue los archivos de los trimestres para comenzar el análisis</p>
+                </div>
+            `;
+        }
+
+        // Add animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Initialize with sample data if files are available
+        window.addEventListener('DOMContentLoaded', async function() {
+            // Check if files are available (for demo purposes)
+            if (window.fs && window.fs.readFile) {
+                try {
+                    // Try to read the uploaded files
+                    const file1 = await window.fs.readFile('42a0d1b0d76c0df5.xls');
+                    const file2 = await window.fs.readFile('6797694af2665a22.xls');
+                    
+                    if (file1 && file2) {
+                        // Process files automatically
+                        const wb1 = XLSX.read(file1, { type: 'array' });
+                        const wb2 = XLSX.read(file2, { type: 'array' });
+                        
+                        const data1 = processWorkbook(wb1, 1);
+                        const data2 = processWorkbook(wb2, 2);
+                        
+                        mergeData(data1);
+                        mergeData(data2);
+                        updateUI();
+                        
+                        showMessage('Datos de ejemplo cargados automáticamente', 'success');
+                    }
+                } catch (error) {
+                    console.log('No se pudieron cargar los archivos automáticamente');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

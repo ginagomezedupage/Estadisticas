@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes Estadísticos Edupage - Colombia</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { 
+            color: #333; 
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .btn {
+            display: block;
+            padding: 20px;
+            margin: 15px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            text-align: center;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: transform 0.3s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .info {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 30px;
+            font-size: 14px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Módulos Estadísticos Edupage</h1>
+        <p class="subtitle">Sistema de Análisis para Colegios Colombianos</p>
+        
+        <a href="sistemaestadisticasasignaturafinal.html" class="btn">
+            📚 Estadísticas por Asignatura
+        </a>
+        
+        <a href="estadisticasdesempenos.html" class="btn">
+            📉 Estadísticas por Desempeños
+        </a>
+        
+        <div class="info">
+            <strong>ℹ️ Información importante:</strong><br>
+            • Los datos se procesan localmente en su navegador<br>
+            • No se almacena información en servidores<br>
+            • Compatible con exportaciones Excel de Edupage<br>
+            • Desarrollado para Edupage Colombia
+        </div>
+    </div>
+</body>
+</html>

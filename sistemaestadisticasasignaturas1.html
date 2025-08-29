@@ -1,0 +1,3333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistema de Análisis Académico - Versión Mejorada</title>
+  <!-- Librerías -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#2563eb 0%,#1e40af 100%);min-height:100vh;padding:20px}
+    .container{max-width:1400px;margin:0 auto;background:#fff;border-radius:15px;box-shadow:0 20px 40px rgba(0,0,0,.2);overflow:hidden}
+    .header{background:linear-gradient(135deg,#60a5fa 0%,#3b82f6 100%);color:#fff;padding:30px;text-align:center}
+    .filters-section{background:#f7f9fc;padding:20px;border-bottom:2px solid #e2e8f0}
+    .filter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px}
+    .filter-item{display:flex;flex-direction:column;gap:5px}
+    .filter-item label{font-size:12px;text-transform:uppercase;color:#718096;font-weight:600}
+    .filter-item select,.filter-item input{padding:8px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:14px;transition:.3s}
+    .filter-item select:focus,.filter-item input:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+    .config-section{background:#edf2f7;padding:20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center}
+    .upload-section{padding:30px;background:#f7f9fc}
+    .upload-area{border:3px dashed #cbd5e0;border-radius:15px;padding:60px 20px;text-align:center;background:#fff;cursor:pointer;transition:.3s}
+    .upload-area:hover{border-color:#3b82f6;background:#f7fafc}
+    .upload-area.dragover{border-color:#2563eb;background:#edf2f7;transform:scale(1.02)}
+    .btn{padding:12px 20px;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:.3s;text-transform:uppercase;letter-spacing:.5px}
+    .btn-primary{background:linear-gradient(135deg,#3b82f6 0%,#2563eb 100%);color:#fff}
+    .btn-success{background:linear-gradient(135deg,#48bb78 0%,#38a169 100%);color:#fff}
+    .btn-danger{background:linear-gradient(135deg,#f56565 0%,#e53e3e 100%);color:#fff}
+    .btn-info{background:linear-gradient(135deg,#4299e1 0%,#3182ce 100%);color:#fff}
+    .btn:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(0,0,0,.15)}
+    .tabs{display:flex;background:#2d3748;overflow-x:auto}
+    .tab{padding:15px 25px;background:transparent;color:#fff;border:none;cursor:pointer;font-weight:500;transition:.3s;white-space:nowrap}
+    .tab:hover{background:rgba(255,255,255,.1)}
+    .tab.active{background:#fff;color:#2d3748}
+    .tab-content{padding:30px;display:none}
+    .tab-content.active{display:block}
+    .performance-table{width:100%;border-collapse:collapse;margin:20px 0;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 5px 15px rgba(0,0,0,.08)}
+    .performance-table th{background:linear-gradient(135deg,#3b82f6 0%,#2563eb 100%);color:#fff;padding:12px;text-align:left;font-weight:600}
+    .performance-table td{padding:10px 12px;border-bottom:1px solid #e2e8f0}
+    .performance-table tr:hover{background:#f7fafc}
+    .desempeno-superior{background:#c6f6d5;color:#22543d;padding:2px 8px;border-radius:4px;font-weight:600}
+    .desempeno-alto{background:#bee3f8;color:#2c5282;padding:2px 8px;border-radius:4px;font-weight:600}
+    .desempeno-basico{background:#feebc8;color:#744210;padding:2px 8px;border-radius:4px;font-weight:600}
+    .desempeno-bajo{background:#fed7d7;color:#742a2a;padding:2px 8px;border-radius:4px;font-weight:600}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin:20px 0}
+    .stat-card{background:#fff;border-radius:10px;padding:20px;box-shadow:0 5px 15px rgba(0,0,0,.08);border-left:4px solid}
+    .stat-card.superior{border-left-color:#48bb78}
+    .stat-card.alto{border-left-color:#4299e1}
+    .stat-card.basico{border-left-color:#ed8936}
+    .stat-card.bajo{border-left-color:#f56565}
+    .stat-value{font-size:32px;font-weight:bold;margin:10px 0}
+    .stat-label{font-size:14px;color:#718096;text-transform:uppercase}
+    .export-buttons{display:flex;justify-content:center;gap:10px;padding:20px;background:#f7f9fc;flex-wrap:wrap}
+    .student-list{background:#fff;border-radius:10px;padding:20px;margin:20px 0;box-shadow:0 5px 15px rgba(0,0,0,.08)}
+    .student-item{padding:15px;border-bottom:1px solid #e2e8f0}
+    .student-item:last-child{border-bottom:none}
+    .student-name{font-weight:600;color:#2d3748;margin-bottom:5px}
+    .subject-list{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+    .subject-tag{background:#fed7d7;color:#742a2a;padding:2px 8px;border-radius:4px;font-size:12px}
+    /* Estilos para alertas y tendencias */
+    .alert-card {
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+      border-left: 4px solid;
+    }
+    .alert-critical {
+      background: #fee;
+      border-left-color: #dc2626;
+    }
+    .alert-warning {
+      background: #fff3cd;
+      border-left-color: #ffc107;
+    }
+    .alert-info {
+      background: #e6f3ff;
+      border-left-color: #3182ce;
+    }
+    .trend-indicator {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 12px;
+    }
+    .trend-up {
+      background: #d4edda;
+      color: #155724;
+    }
+    .trend-down {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .trend-stable {
+      background: #e2e8f0;
+      color: #475569;
+    }
+    .risk-meter {
+      width: 100%;
+      height: 20px;
+      background: linear-gradient(to right, #48bb78, #ecc94b, #f56565);
+      border-radius: 10px;
+      position: relative;
+      margin: 10px 0;
+    }
+    .risk-indicator {
+      position: absolute;
+      width: 4px;
+      height: 30px;
+      background: #2d3748;
+      top: -5px;
+      border-radius: 2px;
+    }
+    /* Modal Tutorial */
+    .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5);overflow:auto}
+    .modal-content{background:#fff;margin:20px auto;padding:30px;border-radius:15px;max-width:900px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+    .modal-header{background:linear-gradient(135deg,#60a5fa 0%,#3b82f6 100%);color:#fff;padding:20px;margin:-30px -30px 20px;border-radius:15px 15px 0 0}
+    .close{color:#fff;float:right;font-size:28px;font-weight:bold;cursor:pointer}
+    .close:hover{opacity:0.8}
+    .tutorial-section{margin:20px 0;padding:20px;background:#f7fafc;border-left:4px solid #3b82f6;border-radius:8px}
+    .tutorial-section h3{color:#2d3748;margin-bottom:10px}
+    .tutorial-section p{margin:8px 0;line-height:1.6}
+    .feature-box{background:#fff;padding:15px;border-radius:8px;margin:10px 0;box-shadow:0 2px 5px rgba(0,0,0,0.08)}
+    .feature-box h4{color:#3b82f6;margin-bottom:8px}
+    /* Top Students */
+    .top-students{background:#f0f9ff;border-radius:10px;padding:20px;margin:20px 0;border:2px solid #3182ce}
+    .top-students h4{color:#2c5282;margin-bottom:15px;font-size:18px}
+    .top-student-item{display:flex;justify-content:space-between;align-items:center;padding:10px;background:#fff;border-radius:8px;margin:8px 0;box-shadow:0 2px 4px rgba(0,0,0,0.05)}
+    .rank{display:inline-block;width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff;text-align:center;line-height:30px;font-weight:bold;margin-right:10px}
+    .rank.gold{background:linear-gradient(135deg,#fbbf24,#f59e0b)}
+    .rank.silver{background:linear-gradient(135deg,#cbd5e0,#94a3b8)}
+    .rank.bronze{background:linear-gradient(135deg,#f97316,#ea580c)}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📊 Sistema de Análisis Académico</h1>
+      <p>Análisis completo con rangos configurables y estadísticas avanzadas</p>
+      <button class="btn btn-info" onclick="showTutorial()" style="margin-top:15px">📘 VER TUTORIAL COMPLETO</button>
+    </div>
+
+    <!-- Configuración -->
+    <div class="config-section">
+      <!-- Botones de Guardar/Cargar Análisis -->
+      <div style="width:100%;display:flex;justify-content:flex-end;gap:10px;margin-bottom:15px">
+        <button class="btn btn-success" onclick="saveAnalysis()">💾 Guardar análisis</button>
+        <label class="btn btn-primary" for="loadJsonInput">📂 Recuperar análisis</label>
+        <input type="file" id="loadJsonInput" accept="application/json" onchange="handleLoadJSON(event)" style="display:none" />
+      </div>
+      
+      <div class="filter-item">
+        <label>Número de Períodos</label>
+        <select id="numPeriodos" onchange="updateConfig()">
+          <option value="3">3 Períodos</option>
+          <option value="4">4 Períodos</option>
+        </select>
+      </div>
+      <div class="filter-item">
+        <label>Período Actual</label>
+        <select id="periodoActual" onchange="onPeriodoChange()"></select>
+      </div>
+      <div id="periodWeights" style="display:flex;gap:15px"></div>
+
+      <!-- Rango de calificación -->
+      <div class="filter-item">
+        <label>Rango de calificación</label>
+        <select id="scaleMode" onchange="onScaleModeChange()">
+          <option value="auto" selected>Auto (detecta por asignatura)</option>
+          <option value="5">1 – 5</option>
+          <option value="10">1 – 10</option>
+          <option value="50">1 – 50</option>
+          <option value="100">0 – 100</option>
+          <option value="custom">Personalizado</option>
+        </select>
+        <span class="hint">Si eliges algo distinto a "Auto", se aplica a todas las asignaturas.</span>
+      </div>
+      <div class="filter-item" id="customMaxWrap" style="display:none">
+        <label>Máximo personalizado</label>
+        <input type="number" id="customMax" min="1" value="100" oninput="onCustomMaxChange()" />
+        <span class="hint">Ej. si tu colegio califica 1–40, escribe 40</span>
+      </div>
+
+      <button class="btn btn-primary" onclick="applyWeights()">✅ Aplicar pesos</button>
+
+      <!-- Rangos por colegio -->
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;margin-top:8px;width:100%">
+        <div class="filter-item" style="min-width:220px">
+          <label>Nombre del colegio</label>
+          <input id="schoolName" placeholder="Ej. Olaya Herrera" />
+        </div>
+        <div class="filter-item">
+          <label>Escala visible (máximo)</label>
+          <select id="rangesScaleMax">
+            <option value="5">/5</option>
+            <option value="10">/10</option>
+            <option value="50">/50</option>
+            <option value="100" selected>/100</option>
+          </select>
+        </div>
+        <div class="filter-item"><label>Bajo (min)</label><input type="number" step="0.01" id="rBMin" value="1"></div>
+        <div class="filter-item"><label>Bajo (max)</label><input type="number" step="0.01" id="rBMax" value="2.9"></div>
+        <div class="filter-item"><label>Básico (min)</label><input type="number" step="0.01" id="rBaMin" value="3.0"></div>
+        <div class="filter-item"><label>Básico (max)</label><input type="number" step="0.01" id="rBaMax" value="3.5"></div>
+        <div class="filter-item"><label>Alto (min)</label><input type="number" step="0.01" id="rAMin" value="3.6"></div>
+        <div class="filter-item"><label>Alto (max)</label><input type="number" step="0.01" id="rAMax" value="4.4"></div>
+        <div class="filter-item"><label>Superior (min)</label><input type="number" step="0.01" id="rSMin" value="4.5"></div>
+        <div class="filter-item"><label>Superior (max)</label><input type="number" step="0.01" id="rSMax" value="5.0"></div>
+        <button class="btn btn-success" onclick="saveRanges()">💾 Guardar rangos</button>
+        <button class="btn" onclick="loadRanges()">📂 Cargar rangos</button>
+      </div>
+    </div>
+
+    <!-- Carga de archivos -->
+    <div class="upload-section" id="uploadSection">
+      <div class="upload-area" onclick="document.getElementById('fileInput').click();" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);" ondragleave="dragLeaveHandler(event);">
+        <div style="font-size:64px">📁</div>
+        <h3>Arrastra aquí tus archivos Excel</h3>
+        <p>o haz clic para seleccionar</p>
+        <input type="file" id="fileInput" multiple accept=".xls,.xlsx" onchange="handleFileSelect(event)" style="display:none" />
+      </div>
+      <div id="fileList" style="margin-top:20px"></div>
+      <center style="margin-top:20px">
+        <button class="btn btn-primary" id="analyzeBtn" onclick="analyzeFiles()" style="display:none">🔍 ANALIZAR ARCHIVOS</button>
+      </center>
+    </div>
+
+    <!-- Sección de resultados -->
+    <div id="resultsSection" style="display:none">
+      <!-- Configuración de Asignaturas a Excluir -->
+      <div class="filters-section" style="background:#fff3cd;border-left:4px solid #ffc107">
+        <h3 style="margin-bottom:15px;color:#856404">⚙️ Configuración de Asignaturas</h3>
+        <p style="font-size:14px;color:#856404;margin-bottom:15px">
+          Desmarca las asignaturas que NO deben incluirse en las estadísticas (ej: Apoyo Escolar, Orientación, etc.)
+        </p>
+        <div id="subjectsConfig" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;padding:15px;background:#fff;border-radius:8px">
+          <!-- Se llenará dinámicamente con checkboxes -->
+        </div>
+        <button class="btn btn-primary" onclick="applySubjectFilter()" style="margin-top:15px">
+          ✅ Aplicar Configuración
+        </button>
+      </div>
+      
+      <!-- Filtros globales -->
+      <div class="filters-section">
+        <h3 style="margin-bottom:15px">Filtros</h3>
+        <div class="filter-grid">
+          <div class="filter-item"><label>Grado</label><select id="filterGrado" onchange="applyFilters()"><option value="all">Todos</option></select></div>
+          <div class="filter-item"><label>Grupo</label><select id="filterGrupo" onchange="applyFilters()"><option value="all">Todos</option></select></div>
+          <div class="filter-item"><label>Asignatura</label><select id="filterAsignatura" onchange="applyFilters()"><option value="all">Todas</option></select></div>
+          <div class="filter-item"><label>Período</label><select id="filterPeriodo" onchange="applyFilters()"><option value="all">Todos</option></select></div>
+          <div class="filter-item"><label>Acumulado</label><select id="filterAcumulado" onchange="applyFilters()"><option value="all">Todos</option><option value=">=60">Aprobando (≥ corte)</option><option value="<60">En riesgo (&lt; corte)</option></select></div>
+          <div class="filter-item"><label>Buscar Estudiante</label><input type="text" id="filterEstudiante" placeholder="Nombre del estudiante..." onkeyup="applyFilters()"></div>
+        </div>
+      </div>
+
+      <!-- Botones Generales (solo exportación completa y nuevo análisis) -->
+      <div class="export-buttons">
+        <button class="btn btn-success" onclick="exportToExcel()">📊 Exportar Todo a Excel</button>
+        <button class="btn btn-danger" onclick="resetAnalysis()">🔁 Nuevo análisis</button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" onclick="showTab(event,'desempeno')">📊 Desempeño por Período</button>
+        <button class="tab" onclick="showTab(event,'estudiantes')">👥 Estudiantes en BAJO</button>
+        <button class="tab" onclick="showTab(event,'notas')">📈 Notas Mínimas</button>
+        <button class="tab" onclick="showTab(event,'asignaturas')">📚 Por Asignatura</button>
+        <button class="tab" onclick="showTab(event,'dashAsig')">📊 Dashboard Asignatura</button>
+        <button class="tab" onclick="showTab(event,'tendencias')">📈 Tendencias y Alertas</button>
+      </div>
+
+      <div id="desempeno" class="tab-content active">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <h2>Análisis de Desempeño por Período</h2>
+          <button class="btn btn-primary" onclick="exportToPDF()">📄 Exportar a PDF</button>
+        </div>
+        <div id="desempenoContent"></div>
+      </div>
+      
+      <div id="estudiantes" class="tab-content">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <h2>Estudiantes con Desempeño BAJO (corte parcial)</h2>
+          <button class="btn btn-primary" onclick="exportEstudiantesBajoPDF()">📄 Exportar a PDF</button>
+        </div>
+        <div id="estudiantesContent"></div>
+      </div>
+      
+      <div id="notas" class="tab-content">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <h2>Notas Mínimas Necesarias</h2>
+          <button class="btn btn-primary" onclick="exportNotasMinimasPDF()">📄 Exportar a PDF</button>
+        </div>
+        <div id="notasContent"></div>
+      </div>
+      
+      <div id="asignaturas" class="tab-content">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <h2>Análisis por Asignatura</h2>
+          <button class="btn btn-primary" onclick="exportAsignaturasPDF()">📄 Exportar a PDF</button>
+        </div>
+        <div id="asignaturasContent"></div>
+      </div>
+      
+      <div id="dashAsig" class="tab-content">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <h2>Dashboard por Asignatura</h2>
+          <button class="btn btn-primary" onclick="exportDashboardAsignaturaPDF()">📄 Exportar a PDF</button>
+        </div>
+        <div id="dashAsigContent"></div>
+      </div>
+      
+      <div id="tendencias" class="tab-content">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <h2>Análisis de Tendencias y Alertas Tempranas</h2>
+          <button class="btn btn-primary" onclick="exportTendenciasPDF()">📄 Exportar a PDF</button>
+        </div>
+        <div id="tendenciasContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Tutorial -->
+  <div id="tutorialModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="close" onclick="closeTutorial()">&times;</span>
+        <h2>📘 Tutorial Completo del Sistema de Análisis Académico</h2>
+      </div>
+      
+      <div class="tutorial-section">
+        <h3>🎯 Propósito del Sistema</h3>
+        <p>Este sistema permite analizar el rendimiento académico de los estudiantes de manera integral, generando estadísticas detalladas, identificando estudiantes en riesgo y proporcionando dashboards visuales por asignatura.</p>
+      </div>
+
+      <div class="tutorial-section">
+        <h3>⚙️ 1. Configuración Inicial</h3>
+        
+        <div class="feature-box">
+          <h4>Configuración de Períodos</h4>
+          <p><strong>Número de Períodos:</strong> Selecciona si tu institución trabaja con 3 o 4 períodos académicos.</p>
+          <p><strong>Período Actual:</strong> Indica en qué período del año te encuentras actualmente.</p>
+          <p><strong>Pesos de Períodos:</strong> Define el porcentaje que vale cada período (deben sumar 100%). Por ejemplo: P1=30%, P2=35%, P3=35%</p>
+        </div>
+
+        <div class="feature-box">
+          <h4>Escalas de Calificación</h4>
+          <p><strong>Auto:</strong> El sistema detecta automáticamente la escala usada en cada asignatura.</p>
+          <p><strong>1-5, 1-10, 1-50, 0-100:</strong> Fuerza una escala específica para todas las asignaturas.</p>
+          <p><strong>Personalizado:</strong> Define tu propia escala máxima (ej. si calificas de 1-40).</p>
+        </div>
+
+        <div class="feature-box">
+          <h4>Rangos de Desempeño</h4>
+          <p>Define los rangos para cada nivel de desempeño según tu escala:</p>
+          <ul style="margin-left:20px">
+            <li><strong>BAJO:</strong> Ej. 1.0 - 2.9</li>
+            <li><strong>BÁSICO:</strong> Ej. 3.0 - 3.5</li>
+            <li><strong>ALTO:</strong> Ej. 3.6 - 4.4</li>
+            <li><strong>SUPERIOR:</strong> Ej. 4.5 - 5.0</li>
+          </ul>
+          <p>💡 Puedes guardar diferentes configuraciones para cada colegio usando el nombre.</p>
+        </div>
+      </div>
+
+      <div class="tutorial-section">
+        <h3>📁 2. Carga de Archivos Excel</h3>
+        
+        <div class="feature-box">
+          <h4>Formato Esperado del Excel</h4>
+          <p>El archivo debe tener la siguiente estructura:</p>
+          <ul style="margin-left:20px">
+            <li><strong>Fila 7:</strong> Nombres de las asignaturas</li>
+            <li><strong>Fila 8:</strong> Headers de períodos (1/4, 2/4, 3/4, Acum)</li>
+            <li><strong>Fila 9 en adelante:</strong> Datos de estudiantes</li>
+            <li><strong>Columna A:</strong> Nombres de estudiantes</li>
+          </ul>
+        </div>
+
+        <div class="feature-box">
+          <h4>Carga Múltiple</h4>
+          <p>Puedes cargar varios archivos Excel a la vez (uno por cada grupo o grado). El sistema los combinará automáticamente.</p>
+        </div>
+      </div>
+
+      <div class="tutorial-section">
+        <h3>📊 3. Pestañas de Análisis</h3>
+        
+        <div class="feature-box">
+          <h4>📊 Desempeño por Período</h4>
+          <p>Muestra estadísticas de cuántos estudiantes están en cada nivel (Superior, Alto, Básico, Bajo) por cada período académico.</p>
+          <p><strong>Información incluida:</strong></p>
+          <ul style="margin-left:20px">
+            <li>Conteo y porcentaje por nivel</li>
+            <li>Tarjetas visuales con colores distintivos</li>
+            <li>Lista de estudiantes destacados</li>
+          </ul>
+        </div>
+
+        <div class="feature-box">
+          <h4>👥 Estudiantes en BAJO</h4>
+          <p>Lista detallada de estudiantes con desempeño bajo en el corte parcial.</p>
+          <p><strong>Información mostrada:</strong></p>
+          <ul style="margin-left:20px">
+            <li>Nombre y grupo del estudiante</li>
+            <li>Asignaturas en las que está fallando</li>
+            <li>Nota actual vs. nota de corte</li>
+            <li>Historial por período</li>
+          </ul>
+        </div>
+
+        <div class="feature-box">
+          <h4>📈 Notas Mínimas</h4>
+          <p>Calcula qué nota necesita cada estudiante en los períodos restantes para aprobar.</p>
+          <p><strong>Estados posibles:</strong></p>
+          <ul style="margin-left:20px">
+            <li><span style="color:#22543d">POSIBLE:</span> Necesita menos de 70 para aprobar</li>
+            <li><span style="color:#744210">DIFÍCIL:</span> Necesita entre 70-85</li>
+            <li><span style="color:#742a2a">CRÍTICO:</span> Necesita entre 85-100</li>
+            <li><span style="color:#742a2a">IMPOSIBLE:</span> Necesita más de 100 (matemáticamente imposible)</li>
+          </ul>
+        </div>
+
+        <div class="feature-box">
+          <h4>📚 Por Asignatura</h4>
+          <p>Análisis agregado de todas las asignaturas con promedios por período.</p>
+          <p><strong>Métricas incluidas:</strong></p>
+          <ul style="margin-left:20px">
+            <li>Promedio por período de cada asignatura</li>
+            <li>Promedio definitivo</li>
+            <li>Nivel de desempeño promedio</li>
+          </ul>
+        </div>
+
+        <div class="feature-box">
+          <h4>📊 Dashboard Asignatura</h4>
+          <p>Vista detallada de una asignatura específica (debes seleccionarla en los filtros).</p>
+          <p><strong>Elementos del dashboard:</strong></p>
+          <ul style="margin-left:20px">
+            <li>KPIs principales (Total estudiantes, Promedio, % Aprobación)</li>
+            <li>Análisis por grupo</li>
+            <li>Análisis por período</li>
+            <li>Lista de estudiantes en riesgo</li>
+            <li><strong>🏆 TOP 5 Mejores Estudiantes</strong> con sus notas</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="tutorial-section">
+        <h3>🔍 4. Uso de Filtros</h3>
+        
+        <div class="feature-box">
+          <h4>Filtros Disponibles</h4>
+          <ul style="margin-left:20px">
+            <li><strong>Grado:</strong> Filtra por grado específico</li>
+            <li><strong>Grupo:</strong> Filtra por grupo/sección</li>
+            <li><strong>Asignatura:</strong> Enfócate en una materia específica</li>
+            <li><strong>Período:</strong> Analiza un período particular</li>
+            <li><strong>Acumulado:</strong> Filtra estudiantes aprobando o en riesgo</li>
+            <li><strong>Buscar:</strong> Encuentra estudiantes específicos por nombre</li>
+          </ul>
+          <p>💡 Los filtros se aplican a todas las pestañas simultáneamente.</p>
+        </div>
+      </div>
+
+      <div class="tutorial-section">
+        <h3>💾 5. Exportación y Guardado</h3>
+        
+        <div class="feature-box">
+          <h4>Opciones de Exportación</h4>
+          <ul style="margin-left:20px">
+            <li><strong>📊 Excel:</strong> Exporta todas las tablas a un archivo Excel con múltiples hojas</li>
+            <li><strong>📄 PDF Resumen:</strong> Genera un PDF con el resumen general</li>
+            <li><strong>📄 Por Asignatura:</strong> PDF con análisis detallado por materia</li>
+            <li><strong>📄 Notas Mínimas:</strong> PDF con reporte de notas necesarias</li>
+            <li><strong>📄 Dashboard PDF:</strong> Exporta el dashboard de la asignatura seleccionada</li>
+          </ul>
+        </div>
+
+        <div class="feature-box">
+          <h4>Guardar y Recuperar Análisis</h4>
+          <p><strong>💾 Guardar análisis:</strong> Guarda todo el análisis actual en un archivo JSON para continuar después.</p>
+          <p><strong>📂 Recuperar análisis:</strong> Carga un análisis previamente guardado sin necesidad de volver a procesar los Excel.</p>
+        </div>
+      </div>
+
+      <div class="tutorial-section">
+        <h3>💡 Tips y Recomendaciones</h3>
+        <ul style="margin-left:20px;line-height:1.8">
+          <li>Guarda tu configuración de rangos con el nombre del colegio para reutilizarla</li>
+          <li>Usa el modo "Auto" de escala si tienes asignaturas con diferentes sistemas de calificación</li>
+          <li>Aplica filtros para generar reportes específicos por grado o grupo</li>
+          <li>Revisa regularmente la pestaña "Estudiantes en BAJO" para intervención temprana</li>
+          <li>El Dashboard por Asignatura te muestra los TOP 5 estudiantes para reconocimiento</li>
+          <li>Exporta a PDF los dashboards para compartir con coordinadores o padres</li>
+          <li>Guarda el análisis en JSON para mantener un historial</li>
+        </ul>
+      </div>
+
+      <center style="margin-top:30px">
+        <button class="btn btn-primary" onclick="closeTutorial()">ENTENDIDO, COMENZAR</button>
+      </center>
+    </div>
+  </div>
+
+  <script>
+    // ==================== Estado =====================
+    let uploadedFiles = [];
+    let excludedSubjects = new Set(); // Asignaturas excluidas del análisis
+    let analysisData = {
+      students: [],
+      subjects: new Set(),
+      grades: new Set(),
+      groups: new Set(),
+      byDesempeno: {},
+      bySubject: {},
+      studentsInBajo: [],
+      config: {
+        numPeriodos: 3,
+        periodoActual: 2,
+        weights: [30,35,35],
+        scaleMode: 'auto',
+        customMax: 100,
+        excludedSubjects: [] // Asignaturas excluidas guardadas
+      },
+      version: '1.5.0'
+    };
+
+    // ===== Rangos por colegio (localStorage) =====
+    const RANGES_KEY = 'rangos_por_colegio_v1';
+    let activeRanges = {
+      escalaMax: 5,
+      bajo:[1,2.9], basico:[3.0,3.5], alto:[3.6,4.4], superior:[4.5,5.0]
+    };
+    
+    function readRangesMap(){ try { return JSON.parse(localStorage.getItem(RANGES_KEY)) || {}; } catch { return {}; } }
+    function writeRangesMap(map){ localStorage.setItem(RANGES_KEY, JSON.stringify(map)); }
+    
+    function saveRanges(){
+      const name = (document.getElementById('schoolName').value || '').trim();
+      if(!name){ alert('Escribe el nombre del colegio para guardar.'); return; }
+      const grab = (id)=>parseFloat(document.getElementById(id).value);
+      const escalaMax = parseFloat(document.getElementById('rangesScaleMax').value)||5;
+      const map = readRangesMap();
+      map[name] = {
+        escalaMax,
+        bajo:[grab('rBMin'),grab('rBMax')],
+        basico:[grab('rBaMin'),grab('rBaMax')],
+        alto:[grab('rAMin'),grab('rAMax')],
+        superior:[grab('rSMin'),grab('rSMax')]
+      };
+      writeRangesMap(map);
+      activeRanges = map[name];
+      alert('Rangos guardados para "'+name+'".');
+      applyFilters();
+    }
+    
+    function loadRanges(){
+      const name = (document.getElementById('schoolName').value || '').trim();
+      const map = readRangesMap();
+      const r = map[name];
+      if(!r){ alert('No hay rangos guardados para ese colegio.'); return; }
+      activeRanges = r;
+      document.getElementById('rangesScaleMax').value = r.escalaMax;
+      document.getElementById('rBMin').value  = r.bajo[0]; document.getElementById('rBMax').value  = r.bajo[1];
+      document.getElementById('rBaMin').value = r.basico[0]; document.getElementById('rBaMax').value = r.basico[1];
+      document.getElementById('rAMin').value  = r.alto[0]; document.getElementById('rAMax').value  = r.alto[1];
+      document.getElementById('rSMin').value  = r.superior[0]; document.getElementById('rSMax').value = r.superior[1];
+      alert('Rangos cargados.');
+      applyFilters();
+    }
+
+    // ==================== Utilidades y Escalas =====================
+    function toNum(v){
+      if(v==null) return NaN;
+      if(typeof v==='number') return v;
+      if(typeof v==='string'){
+        const s=v.replace(/%/g,'').replace(/,/g,'.').trim();
+        const n=parseFloat(s);
+        return isNaN(n)?NaN:n;
+      }
+      return NaN;
+    }
+    
+    function letterTo5(val){
+      if(val==null) return NaN;
+      const s = String(val).trim().toUpperCase();
+      if(s==='B')  return 2.5;
+      if(s==='BAS')return 3.25;
+      if(s==='A')  return 4.0;
+      if(s==='S')  return 4.75;
+      return NaN;
+    }
+    
+    function isLetterGrade(v){
+      if(v==null) return false;
+      const s = String(v).trim().toUpperCase();
+      return ['B','BAS','A','S'].includes(s);
+    }
+
+    function detectScale(maxObserved, sampleTokens){
+      if(sampleTokens && sampleTokens.some(isLetterGrade)) return 20;
+      if(!isFinite(maxObserved) || maxObserved<=0) return 1;
+      if(maxObserved <= 5)  return 20;
+      if(maxObserved <= 10) return 10;
+      if(maxObserved <= 50) return 2;
+      return 1;
+    }
+    
+    function fixedScaleFromMode(){
+      const m = analysisData.config.scaleMode;
+      if(m === '5')   return 20;
+      if(m === '10')  return 10;
+      if(m === '50')  return 2;
+      if(m === '100') return 1;
+      if(m === 'custom'){
+        const maxv = Math.max(1, parseFloat(analysisData.config.customMax)||100);
+        return 100 / maxv;
+      }
+      return null;
+    }
+    
+    function normalizeByScale(n, scale){ 
+      if(!isFinite(n)) return NaN; 
+      return Math.min(100, n * scale); 
+    }
+
+    function getFixedDisplayMaxFromMode(){
+      const m = analysisData.config.scaleMode;
+      if(m === '5')   return 5;
+      if(m === '10')  return 10;
+      if(m === '50')  return 50;
+      if(m === '100') return 100;
+      if(m === 'custom'){
+        const maxv = Math.max(1, parseFloat(analysisData.config.customMax)||100);
+        return maxv;
+      }
+      return null;
+    }
+    
+    function getDisplayMaxForSubject(sd){
+      const fixed = getFixedDisplayMaxFromMode();
+      if(fixed != null) return fixed;
+      const scale = sd?.scale || 1;
+      return 100 / scale;
+    }
+    
+    function toDisplayValue(normValue, sd){
+      const max = getDisplayMaxForSubject(sd);
+      return (normValue * (max / 100));
+    }
+
+    function getPerformanceLevelByRanges(gradeNorm0_100, subjectData){
+      if(!isFinite(gradeNorm0_100) || !subjectData) return 'bajo';
+      const maxVisibleCfg = activeRanges?.escalaMax || 5;
+      const maxVisible    = getDisplayMaxForSubject(subjectData) || maxVisibleCfg;
+      const gradeVisible  = (gradeNorm0_100 * (maxVisible/100));
+      const R = activeRanges;
+      const inRange = (x,[a,b]) => x>=a && x<=b;
+      if(inRange(gradeVisible, R.superior)) return 'superior';
+      if(inRange(gradeVisible, R.alto))     return 'alto';
+      if(inRange(gradeVisible, R.basico))   return 'basico';
+      if(inRange(gradeVisible, R.bajo))     return 'bajo';
+      if(gradeVisible < R.bajo[0])  return 'bajo';
+      if(gradeVisible > R.superior[1]) return 'superior';
+      return 'basico';
+    }
+
+    // ==== UI Config ====
+    function updateConfig(){
+      const numPeriodos = parseInt(document.getElementById('numPeriodos').value);
+      const periodoActualSel = document.getElementById('periodoActual');
+      const periodWeights = document.getElementById('periodWeights');
+
+      periodoActualSel.innerHTML = '';
+      for(let i=1;i<=numPeriodos;i++){ 
+        periodoActualSel.innerHTML += `<option value="${i}">Período ${i}</option>`; 
+      }
+      periodoActualSel.value = Math.min(analysisData.config.periodoActual, numPeriodos) || 2;
+
+      const def = numPeriodos===3?[30,35,35]:[25,25,25,25];
+      periodWeights.innerHTML = '';
+      for(let i=1;i<=numPeriodos;i++){
+        const val = (analysisData.config.weights && analysisData.config.weights.length===numPeriodos?analysisData.config.weights[i-1]:def[i-1]);
+        periodWeights.innerHTML += `<div class="filter-item"><label>% Período ${i}</label><input type="number" id="weight${i}" value="${val}" style="width:90px"></div>`;
+      }
+      analysisData.config.numPeriodos = numPeriodos;
+      analysisData.config.weights = (analysisData.config.weights && analysisData.config.weights.length===numPeriodos)?analysisData.config.weights:def;
+
+      document.getElementById('scaleMode').value = analysisData.config.scaleMode || 'auto';
+      document.getElementById('customMax').value = analysisData.config.customMax || 100;
+      document.getElementById('customMaxWrap').style.display = (analysisData.config.scaleMode==='custom') ? 'block' : 'none';
+    }
+    updateConfig();
+
+    function onScaleModeChange(){
+      const mode = document.getElementById('scaleMode').value;
+      analysisData.config.scaleMode = mode;
+      document.getElementById('customMaxWrap').style.display = (mode==='custom') ? 'block' : 'none';
+      if(analysisData.students.length){
+        recomputeWithConfig();
+        analyzePerformance();
+        populateFilters();
+        applyFilters();
+      }
+    }
+    
+    function onCustomMaxChange(){
+      const v = parseFloat(document.getElementById('customMax').value)||100;
+      analysisData.config.customMax = v;
+      if(analysisData.students.length && analysisData.config.scaleMode==='custom'){
+        recomputeWithConfig();
+        analyzePerformance();
+        populateFilters();
+        applyFilters();
+      }
+    }
+    
+    function onPeriodoChange(){
+      const p = parseInt(document.getElementById('periodoActual').value)||2;
+      const weights = [];
+      for(let i=1;i<=analysisData.config.numPeriodos;i++){
+        weights.push(parseFloat(document.getElementById(`weight${i}`).value)||0);
+      }
+      const sum = weights.reduce((a,b)=>a+b,0);
+      if(Math.abs(sum-100)>0.1){ 
+        alert('Los porcentajes deben sumar 100%'); 
+        document.getElementById('periodoActual').value = analysisData.config.periodoActual; 
+        return; 
+      }
+      analysisData.config.weights = weights;
+      analysisData.config.periodoActual = p;
+      recomputeWithConfig();
+      analyzePerformance();
+      populateFilters();
+      applyFilters();
+    }
+    
+    function applyWeights(){
+      const num = parseInt(document.getElementById('numPeriodos').value) || analysisData.config.numPeriodos;
+      const weights = [];
+      for(let i=1;i<=num;i++){ 
+        weights.push(parseFloat(document.getElementById(`weight${i}`).value) || 0); 
+      }
+      const sum = weights.reduce((a,b)=>a+b,0);
+      if(Math.abs(sum-100)>0.1){ 
+        alert('Los porcentajes deben sumar 100%'); 
+        return; 
+      }
+      analysisData.config.numPeriodos = num;
+      analysisData.config.weights = weights;
+      recomputeWithConfig();
+      analyzePerformance();
+      populateFilters();
+      applyFilters();
+    }
+
+    // ==================== Detectar y Excluir Asignaturas =====================
+    // Detectar asignaturas que probablemente deban excluirse (todas en cero o sin datos)
+    function detectExcludableSubjects(){
+      const subjectStats = new Map();
+      
+      // Inicializar estadísticas para cada asignatura
+      analysisData.subjects.forEach(subject => {
+        subjectStats.set(subject, {
+          totalValues: 0,
+          nonZeroValues: 0,
+          hasData: false
+        });
+      });
+      
+      // Contar valores para cada asignatura
+      analysisData.students.forEach(student => {
+        Object.entries(student.subjects || {}).forEach(([subject, data]) => {
+          const stats = subjectStats.get(subject);
+          if(!stats) return;
+          
+          // Revisar períodos
+          Object.values(data.periods || {}).forEach(grade => {
+            if(typeof grade === 'number'){
+              stats.totalValues++;
+              stats.hasData = true;
+              if(grade > 0) stats.nonZeroValues++;
+            }
+          });
+          
+          // Revisar acumulado
+          if(typeof data.acumulado === 'number'){
+            stats.totalValues++;
+            stats.hasData = true;
+            if(data.acumulado > 0) stats.nonZeroValues++;
+          }
+        });
+      });
+      
+      // Sugerir exclusión para asignaturas sin datos o todas en cero
+      const suggestedExclusions = ['APOYO ESCOLAR', 'ORIENTACIÓN', 'TUTORÍA', 'DIRECCIÓN DE GRUPO'];
+      
+      subjectStats.forEach((stats, subject) => {
+        const upperSubject = subject.toUpperCase();
+        // Excluir si: no tiene datos, todos son ceros, o está en la lista sugerida
+        if(!stats.hasData || stats.nonZeroValues === 0 || 
+           suggestedExclusions.some(excl => upperSubject.includes(excl))){
+          excludedSubjects.add(subject);
+        }
+      });
+      
+      // Aplicar exclusiones guardadas previamente
+      if(analysisData.config.excludedSubjects){
+        analysisData.config.excludedSubjects.forEach(sub => excludedSubjects.add(sub));
+      }
+    }
+    
+    // Crear checkboxes para configurar asignaturas
+    function populateSubjectsConfig(){
+      const container = document.getElementById('subjectsConfig');
+      if(!container) return;
+      
+      container.innerHTML = '';
+      const sortedSubjects = Array.from(analysisData.subjects).sort();
+      
+      sortedSubjects.forEach(subject => {
+        const isExcluded = excludedSubjects.has(subject);
+        const div = document.createElement('div');
+        div.style.display = 'flex';
+        div.style.alignItems = 'center';
+        div.style.gap = '8px';
+        div.style.padding = '5px';
+        div.style.borderRadius = '4px';
+        div.style.background = isExcluded ? '#fee' : '#f0f8ff';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = `subject_${subject}`;
+        checkbox.checked = !isExcluded;
+        checkbox.style.cursor = 'pointer';
+        
+        const label = document.createElement('label');
+        label.htmlFor = `subject_${subject}`;
+        label.textContent = subject;
+        label.style.cursor = 'pointer';
+        label.style.fontSize = '14px';
+        label.style.color = isExcluded ? '#c53030' : '#2d3748';
+        
+        div.appendChild(checkbox);
+        div.appendChild(label);
+        container.appendChild(div);
+      });
+    }
+    
+    // Aplicar configuración de asignaturas
+    function applySubjectFilter(){
+      excludedSubjects.clear();
+      const sortedSubjects = Array.from(analysisData.subjects);
+      
+      sortedSubjects.forEach(subject => {
+        const checkbox = document.getElementById(`subject_${subject}`);
+        if(checkbox && !checkbox.checked){
+          excludedSubjects.add(subject);
+        }
+      });
+      
+      // Guardar configuración
+      analysisData.config.excludedSubjects = Array.from(excludedSubjects);
+      
+      // Recalcular todo
+      analyzePerformance();
+      populateFilters();
+      applyFilters();
+      populateSubjectsConfig(); // Actualizar visual
+      
+      alert(`✅ Configuración aplicada. ${excludedSubjects.size} asignatura(s) excluida(s) del análisis.`);
+    }
+    
+    // Verificar si una asignatura debe incluirse en el análisis
+    function shouldIncludeSubject(subject){
+      return !excludedSubjects.has(subject);
+    }
+
+    // ==================== Carga Archivos =====================
+    function dragOverHandler(ev){ev.preventDefault();ev.currentTarget.classList.add('dragover');}
+    function dragLeaveHandler(ev){ev.currentTarget.classList.remove('dragover');}
+    function dropHandler(ev){ev.preventDefault();ev.currentTarget.classList.remove('dragover');handleFiles(ev.dataTransfer.files);} 
+    function handleFileSelect(ev){handleFiles(ev.target.files);} 
+    
+    function handleFiles(files){
+      for(const file of files){ 
+        if(/\.(xls|xlsx)$/i.test(file.name)){ 
+          if(!uploadedFiles.find(f=>f.name===file.name)) uploadedFiles.push(file); 
+        } 
+      }
+      updateFileList();
+    }
+    
+    function updateFileList(){
+      const fileList = document.getElementById('fileList');
+      const analyzeBtn = document.getElementById('analyzeBtn');
+      if(uploadedFiles.length>0){
+        analyzeBtn.style.display='inline-block';
+        fileList.innerHTML = uploadedFiles.map((f,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#fff;border-radius:8px;margin:5px 0;box-shadow:0 2px 5px rgba(0,0,0,.1)"><span>📄 ${f.name}</span><button class="btn btn-danger" onclick="removeFile(${i})" style="padding:5px 15px;font-size:12px">Eliminar</button></div>`).join('');
+      }else{ 
+        fileList.innerHTML=''; 
+        analyzeBtn.style.display='none'; 
+      }
+    }
+    
+    function removeFile(index){ 
+      uploadedFiles.splice(index,1); 
+      updateFileList(); 
+    }
+
+    // ==================== Análisis =====================
+    async function analyzeFiles(){
+      if(uploadedFiles.length===0){ 
+        alert('Por favor, carga al menos un archivo Excel'); 
+        return; 
+      }
+      const numPeriodos = parseInt(document.getElementById('numPeriodos').value);
+      const weights = []; 
+      for(let i=1;i<=numPeriodos;i++){ 
+        weights.push(parseFloat(document.getElementById(`weight${i}`).value)||0); 
+      }
+      const sum = weights.reduce((a,b)=>a+b,0); 
+      if(Math.abs(sum-100)>0.1){ 
+        alert('Los porcentajes deben sumar 100%'); 
+        return; 
+      }
+      analysisData.config.weights = weights;
+      analysisData.config.numPeriodos = numPeriodos;
+      analysisData.config.periodoActual = parseInt(document.getElementById('periodoActual').value)||2;
+
+      analysisData.students=[]; 
+      analysisData.subjects=new Set(); 
+      analysisData.grades=new Set(); 
+      analysisData.groups=new Set();
+      analysisData.byDesempeno={}; 
+      analysisData.bySubject={}; 
+      analysisData.studentsInBajo=[];
+      
+      for(let p=1;p<=numPeriodos;p++){ 
+        analysisData.byDesempeno[`P${p}`]={superior:[],alto:[],basico:[],bajo:[]}; 
+      }
+      
+      try{
+        for(const file of uploadedFiles){ 
+          await processExcelFile(file); 
+        }
+        detectExcludableSubjects(); // Detectar asignaturas que podrían excluirse
+        populateSubjectsConfig(); // Mostrar configuración de asignaturas
+        analyzePerformance();
+        populateFilters();
+        applyFilters();
+        document.getElementById('resultsSection').style.display='block';
+        document.getElementById('uploadSection').style.display='none';
+      }catch(e){ 
+        alert('Error: '+e.message); 
+        console.error(e); 
+      }
+    }
+
+    function processExcelFile(file){
+      return new Promise((resolve,reject)=>{
+        const reader = new FileReader();
+        reader.onload = (e)=>{
+          try{ 
+            const data = e.target.result; 
+            const wb = XLSX.read(data,{type:'binary'}); 
+            wb.SheetNames.forEach(sheetName=>{ 
+              const sheet = wb.Sheets[sheetName]; 
+              processSheet(sheet,sheetName); 
+            }); 
+            resolve(); 
+          } catch(err){ 
+            reject(err); 
+          }
+        };
+        reader.readAsBinaryString(file);
+      });
+    }
+
+    function processSheet(sheet,sheetName){
+      const data = XLSX.utils.sheet_to_json(sheet,{header:1});
+      const gradeMatch = sheetName.match(/(\d+)/); 
+      const grade = gradeMatch?gradeMatch[1]:'SG';
+      analysisData.grades.add(grade); 
+      analysisData.groups.add(sheetName);
+
+      const SUBJECTS_ROW=6, HEADERS_ROW=7, STUDENTS_START=8;
+      const subjects=[]; 
+      let currentSubject=null; 
+      const subjectRanges={};
+
+      // Detectar rangos de columnas por asignatura
+      for(let col=1; col < (data[SUBJECTS_ROW]?data[SUBJECTS_ROW].length:0); col++){
+        const cell = data[SUBJECTS_ROW][col];
+        if(cell && cell.toString().trim()){
+          currentSubject = cell.toString().trim(); 
+          subjects.push(currentSubject);
+          subjectRanges[currentSubject]={start:col,end:col,periods:{}};
+        } else if(currentSubject){
+          subjectRanges[currentSubject].end = col;
+        }
+      }
+      
+      // Identificar columnas de periodos y acumulado
+      subjects.forEach(subject=>{
+        const range = subjectRanges[subject];
+        for(let col=range.start; col<=range.end; col++){
+          const header = (data[HEADERS_ROW]?data[HEADERS_ROW][col]:'' ) || '';
+          if(header){
+            const h = header.toString().toLowerCase();
+            for(let p=1;p<=analysisData.config.numPeriodos;p++){
+              if(h.includes(`${p}/${analysisData.config.numPeriodos}`)) range.periods[p]=col;
+            }
+            if(h.includes('acum')) range.acumCol=col;
+          }
+        }
+      });
+
+      // Calcular escala por asignatura
+      const fixedScale = fixedScaleFromMode();
+      subjects.forEach(subject=>{
+        const range = subjectRanges[subject];
+        if(fixedScale!=null){ 
+          range.scale = fixedScale; 
+          return; 
+        }
+        let maxObserved = -Infinity;
+        const sampleTokens = [];
+        const periodCols = Object.values(range.periods || {});
+        const colsToCheck = [...periodCols, ...(range.acumCol ? [range.acumCol] : [])];
+        const maxRows = Math.min(data.length, STUDENTS_START + 80);
+        for(let row=STUDENTS_START; row<maxRows; row++){
+          if(!data[row] || !data[row][0]) continue;
+          for(const c of colsToCheck){
+            const raw = data[row][c];
+            if(isLetterGrade(raw)) sampleTokens.push(String(raw).trim().toUpperCase());
+            const num = toNum(raw);
+            if(isFinite(num)) maxObserved = Math.max(maxObserved, num);
+          }
+        }
+        range.scale = detectScale(maxObserved, sampleTokens);
+      });
+
+      // Leer filas de estudiantes
+      for(let row=STUDENTS_START; row<data.length; row++){
+        if(!data[row] || !data[row][0]) continue;
+        const studentName = data[row][0].toString().trim();
+        if(!studentName || studentName.toLowerCase().includes('total')) continue;
+
+        const student = { 
+          name:studentName, 
+          grade:grade, 
+          group:sheetName, 
+          subjects:{}, 
+          periodPerformance:{}, 
+          failedSubjects:[], 
+          minimumGrades:{} 
+        };
+        
+        subjects.forEach(subject=>{
+          const range = subjectRanges[subject];
+          const subjectData={
+            periods:{}, 
+            rawPeriods:{},
+            acumulado:0, 
+            rawAcum:undefined,
+            puntosParciales:0, 
+            pesoParcial:0, 
+            corteAprobacion:0, 
+            onTrack:false,
+            scale: range.scale
+          };
+          let hasValid=false;
+
+          for(const p in range.periods){
+            const raw = data[row][range.periods[p]];
+            let rawNum = toNum(raw);
+            if(!isFinite(rawNum) && isLetterGrade(raw)){ 
+              rawNum = letterTo5(raw); 
+            }
+            if(isFinite(rawNum)){
+              const val = isLetterGrade(raw) ? (rawNum * (100/5)) : normalizeByScale(rawNum, range.scale);
+              subjectData.rawPeriods[p]=rawNum;
+              subjectData.periods[p]= val;
+              hasValid=true;
+            }
+          }
+          
+          if(range.acumCol!=null){
+            const rawA = data[row][range.acumCol];
+            let rawNumA = toNum(rawA);
+            if(!isFinite(rawNumA) && isLetterGrade(rawA)){ 
+              rawNumA = letterTo5(rawA); 
+            }
+            if(isFinite(rawNumA)){
+              subjectData.rawAcum = rawNumA;
+              subjectData.acumulado = isLetterGrade(rawA) ? (rawNumA * (100/5)) : normalizeByScale(rawNumA, range.scale);
+              hasValid=true;
+            }
+          }
+
+          if(hasValid){
+            const cfg=analysisData.config; 
+            let puntos=0, peso=0;
+            for(let p=1;p<=cfg.periodoActual;p++){
+              const g = subjectData.periods[p];
+              if(typeof g==='number'){ 
+                puntos += g * cfg.weights[p-1]/100; 
+                peso += cfg.weights[p-1]; 
+              }
+            }
+            subjectData.puntosParciales = puntos;
+            subjectData.pesoParcial    = peso;
+            subjectData.corteAprobacion= 60 * (peso/100);
+            subjectData.onTrack        = peso>0 ? (puntos >= subjectData.corteAprobacion) : false;
+
+            student.subjects[subject]=subjectData; 
+            analysisData.subjects.add(subject);
+            
+            for(const p in subjectData.periods){
+              const g = subjectData.periods[p];
+              const level = getPerformanceLevelByRanges(g, subjectData);
+              if(!student.periodPerformance[`P${p}`]) student.periodPerformance[`P${p}`]={};
+              student.periodPerformance[`P${p}`][subject]=level;
+              if(level==='bajo'){
+                if(!student.failedSubjects[`P${p}`]) student.failedSubjects[`P${p}`]=[];
+                student.failedSubjects[`P${p}`].push({subject,grade:g});
+              }
+            }
+            calculateMinimumGrade(student,subject);
+          }
+        });
+        analysisData.students.push(student);
+      }
+    }
+
+    function calculateMinimumGrade(student,subject){
+      const cfg = analysisData.config; 
+      const sd = student.subjects[subject];
+      if(cfg.periodoActual>=cfg.numPeriodos){
+        student.minimumGrades[subject] = { 
+          current: sd.puntosParciales || sd.acumulado || 0, 
+          needed: 0, 
+          possible: true, 
+          corteParcial: sd.corteAprobacion 
+        };
+        return;
+      }
+      const acc = sd.puntosParciales || 0; 
+      const wacc = sd.pesoParcial || 0; 
+      const remaining = 100 - wacc; 
+      const target = 60;
+      const needed = remaining>0 ? ((target - acc) * 100) / remaining : 0;
+      student.minimumGrades[subject] = { 
+        current: acc, 
+        needed: Math.max(0,needed), 
+        possible: needed<=100, 
+        corteParcial: sd.corteAprobacion 
+      };
+    }
+
+    function analyzePerformance(){
+      analysisData.studentsInBajo = [];
+      analysisData.byDesempeno={}; 
+      for(let p=1;p<=analysisData.config.periodoActual;p++){ 
+        analysisData.byDesempeno[`P${p}`]={superior:[],alto:[],basico:[],bajo:[]}; 
+      }
+      
+      analysisData.students.forEach(student=>{
+        let hasLow=false;
+        Object.entries(student.subjects).forEach(([subject,data])=>{
+          // EXCLUIR asignaturas marcadas
+          if(!shouldIncludeSubject(subject)) return;
+          
+          if(data.pesoParcial>0 && !data.onTrack) hasLow=true;
+          for(let p=1;p<=analysisData.config.periodoActual;p++){
+            if(data.periods && data.periods[p]!=null){
+              const level = getPerformanceLevelByRanges(data.periods[p], data);
+              analysisData.byDesempeno[`P${p}`][level].push({ 
+                student:student.name, 
+                group:student.group, 
+                subject, 
+                grade:data.periods[p] 
+              });
+            }
+          }
+        });
+        if(hasLow) analysisData.studentsInBajo.push(student);
+      });
+    }
+
+    // ==================== Filtros y Render =====================
+    function populateFilters(){
+      const gradeFilter=document.getElementById('filterGrado');
+      const groupFilter=document.getElementById('filterGrupo');
+      const subjectFilter=document.getElementById('filterAsignatura');
+      const periodoFilter=document.getElementById('filterPeriodo');
+      const acumuladoFilter=document.getElementById('filterAcumulado');
+      
+      gradeFilter.innerHTML='<option value="all">Todos</option>';
+      analysisData.grades.forEach(g=>{ 
+        gradeFilter.innerHTML += `<option value="${g}">Grado ${g}</option>`; 
+      });
+      
+      groupFilter.innerHTML='<option value="all">Todos</option>';
+      analysisData.groups.forEach(grp=>{ 
+        groupFilter.innerHTML += `<option value="${grp}">${grp}</option>`; 
+      });
+      
+      subjectFilter.innerHTML='<option value="all">Todas</option>';
+      // Solo mostrar asignaturas NO excluidas en el filtro
+      analysisData.subjects.forEach(sub=>{ 
+        if(shouldIncludeSubject(sub)){
+          subjectFilter.innerHTML += `<option value="${sub}">${sub}</option>`; 
+        }
+      });
+      
+      periodoFilter.innerHTML='<option value="all">Todos</option>';
+      for(let p=1;p<=analysisData.config.periodoActual;p++){ 
+        periodoFilter.innerHTML += `<option value="${p}">Período ${p}</option>`; 
+      }
+      acumuladoFilter.value = 'all';
+    }
+
+    function applyFilters(){
+      displayDesempeno();
+      displayEstudiantesBajo();
+      displayNotasMinimas();
+      displayAsignaturas();
+      renderDashboardAsignatura();
+      displayTendencias();
+    }
+    
+    // ==================== Análisis de Tendencias y Alertas =====================
+    function displayTendencias(){
+      const container = document.getElementById('tendenciasContent');
+      if(!container) return;
+      
+      const selGrado = document.getElementById('filterGrado').value;
+      const selGrupo = document.getElementById('filterGrupo').value;
+      const q = (document.getElementById('filterEstudiante').value || '').toLowerCase();
+      
+      // Filtrar estudiantes
+      const students = analysisData.students.filter(st => {
+        if(selGrado !== 'all' && st.grade !== selGrado) return false;
+        if(selGrupo !== 'all' && st.group !== selGrupo) return false;
+        if(q && !st.name.toLowerCase().includes(q)) return false;
+        return true;
+      });
+      
+      // Analizar tendencias y generar alertas
+      const alerts = [];
+      const trends = [];
+      
+      students.forEach(student => {
+        const studentTrend = analyzeStudentTrend(student);
+        trends.push(studentTrend);
+        
+        // Generar alertas según el nivel de riesgo
+        if(studentTrend.riskLevel === 'critical'){
+          alerts.push({
+            type: 'critical',
+            student: student.name,
+            group: student.group,
+            message: studentTrend.alertMessage,
+            trend: studentTrend.trend,
+            failingSubjects: studentTrend.failingSubjects
+          });
+        } else if(studentTrend.riskLevel === 'warning'){
+          alerts.push({
+            type: 'warning',
+            student: student.name,
+            group: student.group,
+            message: studentTrend.alertMessage,
+            trend: studentTrend.trend,
+            failingSubjects: studentTrend.failingSubjects
+          });
+        }
+      });
+      
+      // Ordenar alertas por criticidad
+      alerts.sort((a,b) => {
+        const priority = {critical: 0, warning: 1, info: 2};
+        return priority[a.type] - priority[b.type];
+      });
+      
+      // Generar HTML
+      let html = '';
+      
+      // Sección de Alertas Tempranas
+      html += `
+        <div style="margin-bottom:30px">
+          <h3 style="color:#dc2626;margin-bottom:15px">🚨 Alertas Tempranas (${alerts.length} estudiantes en riesgo)</h3>
+      `;
+      
+      if(alerts.length > 0){
+        alerts.slice(0, 10).forEach(alert => {
+          const icon = alert.type === 'critical' ? '🔴' : '🟡';
+          const trendIcon = alert.trend === 'down' ? '↘️' : alert.trend === 'up' ? '↗️' : '→';
+          
+          html += `
+            <div class="alert-card alert-${alert.type}">
+              <div style="display:flex;justify-content:space-between;align-items:start">
+                <div>
+                  <strong>${icon} ${alert.student}</strong> - ${alert.group}
+                  <span class="trend-indicator trend-${alert.trend}">${trendIcon} Tendencia ${
+                    alert.trend === 'down' ? 'Negativa' : 
+                    alert.trend === 'up' ? 'Positiva' : 'Estable'
+                  }</span>
+                </div>
+              </div>
+              <div style="margin-top:8px;font-size:14px">${alert.message}</div>
+              ${alert.failingSubjects.length > 0 ? `
+                <div style="margin-top:8px">
+                  <strong>Materias en riesgo:</strong> ${alert.failingSubjects.join(', ')}
+                </div>
+              ` : ''}
+            </div>
+          `;
+        });
+        
+        if(alerts.length > 10){
+          html += `<div class="hint">Mostrando 10 de ${alerts.length} alertas. Exporte el reporte para ver todas.</div>`;
+        }
+      } else {
+        html += '<p style="color:#16a34a">✅ No hay estudiantes en riesgo crítico con los filtros aplicados.</p>';
+      }
+      html += '</div>';
+      
+      // Sección de Análisis de Tendencias
+      html += `
+        <div style="margin-bottom:30px">
+          <h3 style="color:#3182ce;margin-bottom:15px">📈 Análisis de Tendencias por Período</h3>
+      `;
+      
+      // Estadísticas de tendencias
+      const trendStats = {
+        improving: trends.filter(t => t.trend === 'up').length,
+        declining: trends.filter(t => t.trend === 'down').length,
+        stable: trends.filter(t => t.trend === 'stable').length
+      };
+      
+      html += `
+        <div class="stats-grid">
+          <div class="stat-card" style="border-left-color:#48bb78">
+            <div class="stat-label">MEJORANDO</div>
+            <div class="stat-value">${trendStats.improving}</div>
+            <div>${students.length ? ((trendStats.improving/students.length)*100).toFixed(1) : 0}%</div>
+          </div>
+          <div class="stat-card" style="border-left-color:#ecc94b">
+            <div class="stat-label">ESTABLES</div>
+            <div class="stat-value">${trendStats.stable}</div>
+            <div>${students.length ? ((trendStats.stable/students.length)*100).toFixed(1) : 0}%</div>
+          </div>
+          <div class="stat-card" style="border-left-color:#f56565">
+            <div class="stat-label">DECLINANDO</div>
+            <div class="stat-value">${trendStats.declining}</div>
+            <div>${students.length ? ((trendStats.declining/students.length)*100).toFixed(1) : 0}%</div>
+          </div>
+        </div>
+      `;
+      
+      // Top 5 mejorando
+      const improving = trends.filter(t => t.trend === 'up').sort((a,b) => b.improvement - a.improvement).slice(0,5);
+      if(improving.length > 0){
+        html += `
+          <div style="margin-top:20px">
+            <h4 style="color:#16a34a">↗️ Top ${improving.length} Estudiantes Mejorando</h4>
+            <table class="performance-table" style="margin-top:10px">
+              <thead>
+                <tr>
+                  <th>Estudiante</th>
+                  <th>Grupo</th>
+                  <th>Mejora Promedio</th>
+                  <th>Tendencia</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+        
+        improving.forEach(t => {
+          html += `
+            <tr>
+              <td>${t.studentName}</td>
+              <td>${t.group}</td>
+              <td style="color:#16a34a">+${t.improvement.toFixed(1)} puntos</td>
+              <td><span class="trend-indicator trend-up">↗️ MEJORANDO</span></td>
+            </tr>
+          `;
+        });
+        html += '</tbody></table></div>';
+      }
+      
+      // Top 5 en riesgo
+      const declining = trends.filter(t => t.trend === 'down').sort((a,b) => a.improvement - b.improvement).slice(0,5);
+      if(declining.length > 0){
+        html += `
+          <div style="margin-top:20px">
+            <h4 style="color:#dc2626">↘️ Top ${declining.length} Estudiantes en Declive</h4>
+            <table class="performance-table" style="margin-top:10px">
+              <thead>
+                <tr>
+                  <th>Estudiante</th>
+                  <th>Grupo</th>
+                  <th>Declive Promedio</th>
+                  <th>Tendencia</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+        
+        declining.forEach(t => {
+          html += `
+            <tr>
+              <td>${t.studentName}</td>
+              <td>${t.group}</td>
+              <td style="color:#dc2626">${t.improvement.toFixed(1)} puntos</td>
+              <td><span class="trend-indicator trend-down">↘️ DECLINANDO</span></td>
+            </tr>
+          `;
+        });
+        html += '</tbody></table></div>';
+      }
+      
+      html += '</div>';
+      
+      // Predicciones
+      html += `
+        <div style="margin-bottom:30px">
+          <h3 style="color:#7c3aed;margin-bottom:15px">🔮 Predicciones y Recomendaciones</h3>
+          <div class="hint">
+            Basado en las tendencias actuales, el sistema predice el rendimiento futuro y sugiere intervenciones.
+          </div>
+      `;
+      
+      const predictions = generatePredictions(students, trends);
+      if(predictions.length > 0){
+        html += '<div style="margin-top:15px">';
+        predictions.slice(0,5).forEach(pred => {
+          html += `
+            <div class="alert-card alert-info">
+              <strong>📊 ${pred.student}</strong>
+              <div style="margin-top:8px">${pred.prediction}</div>
+              <div style="margin-top:8px;color:#3182ce"><strong>Recomendación:</strong> ${pred.recommendation}</div>
+            </div>
+          `;
+        });
+        html += '</div>';
+      }
+      
+      html += '</div>';
+      
+      container.innerHTML = html;
+    }
+    
+    function analyzeStudentTrend(student){
+      const P = analysisData.config.periodoActual;
+      let totalImprovement = 0;
+      let validComparisons = 0;
+      const failingSubjects = [];
+      
+      // Analizar cada asignatura
+      Object.entries(student.subjects || {}).forEach(([subject, data]) => {
+        if(!shouldIncludeSubject(subject)) return;
+        
+        // Calcular tendencia entre períodos
+        for(let p = 2; p <= P; p++){
+          const prev = data.periods && data.periods[p-1];
+          const curr = data.periods && data.periods[p];
+          
+          if(typeof prev === 'number' && typeof curr === 'number'){
+            totalImprovement += (curr - prev);
+            validComparisons++;
+          }
+        }
+        
+        // Identificar materias reprobadas
+        const puntos = data.puntosParciales || data.acumulado || 0;
+        const corte = data.corteAprobacion || 60;
+        if(puntos < corte){
+          failingSubjects.push(subject);
+        }
+      });
+      
+      const avgImprovement = validComparisons > 0 ? totalImprovement / validComparisons : 0;
+      const trend = avgImprovement > 2 ? 'up' : avgImprovement < -2 ? 'down' : 'stable';
+      
+      // Determinar nivel de riesgo
+      let riskLevel = 'low';
+      let alertMessage = '';
+      
+      if(failingSubjects.length >= 3 && trend === 'down'){
+        riskLevel = 'critical';
+        alertMessage = `Riesgo crítico: ${failingSubjects.length} materias reprobadas con tendencia negativa. Requiere intervención inmediata.`;
+      } else if(failingSubjects.length >= 2 || (failingSubjects.length >= 1 && trend === 'down')){
+        riskLevel = 'warning';
+        alertMessage = `Advertencia: ${failingSubjects.length} materia(s) en riesgo. Se recomienda plan de mejora.`;
+      } else if(trend === 'down'){
+        riskLevel = 'warning';
+        alertMessage = 'Tendencia negativa detectada. Monitorear de cerca.';
+      }
+      
+      return {
+        studentName: student.name,
+        group: student.group,
+        trend,
+        improvement: avgImprovement,
+        riskLevel,
+        alertMessage,
+        failingSubjects
+      };
+    }
+    
+    function generatePredictions(students, trends){
+      const predictions = [];
+      
+      trends.forEach((trend, idx) => {
+        const student = students[idx];
+        if(!student) return;
+        
+        let prediction = '';
+        let recommendation = '';
+        
+        if(trend.riskLevel === 'critical'){
+          const projected = 60 - (trend.improvement * 2); // Proyección simple
+          prediction = `Con la tendencia actual, el estudiante podría terminar el año con un promedio aproximado de ${Math.max(20, projected).toFixed(1)}/100.`;
+          recommendation = 'Reunión urgente con padres, plan de recuperación intensivo, considerar tutorías personalizadas.';
+        } else if(trend.trend === 'down' && trend.failingSubjects.length > 0){
+          prediction = `Si continúa la tendencia actual, podría reprobar ${trend.failingSubjects.length + 1} materias al final del período.`;
+          recommendation = 'Implementar plan de mejora, aumentar seguimiento, reforzar materias débiles.';
+        } else if(trend.trend === 'up' && trend.improvement > 5){
+          prediction = `Excelente progreso. De mantener esta mejora, podría subir su promedio general en ${(trend.improvement * 2).toFixed(1)} puntos.`;
+          recommendation = 'Mantener estrategias actuales, reconocer el esfuerzo, considerar para programas avanzados.';
+        }
+        
+        if(prediction){
+          predictions.push({
+            student: student.name,
+            prediction,
+            recommendation
+          });
+        }
+      });
+      
+      return predictions;
+    }
+    
+    function exportTendenciasPDF(){
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p','mm','letter');
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const margin = 15;
+      const maxLineWidth = pageW - (margin * 2);
+      
+      // Header
+      doc.setFillColor(60,74,87);
+      doc.rect(10,10,pageW-20,10,'F');
+      doc.setTextColor(255);
+      doc.setFontSize(14);
+      doc.text('ANÁLISIS DE TENDENCIAS Y ALERTAS TEMPRANAS', pageW/2, 17, {align:'center'});
+      doc.setTextColor(0);
+      
+      // Función para dividir texto largo en líneas que caben en el ancho
+      function splitTextToLines(text, fontSize, maxWidth) {
+        doc.setFontSize(fontSize);
+        return doc.splitTextToSize(text, maxWidth);
+      }
+      
+      // Función para verificar y crear nueva página si es necesario
+      function checkPageBreak(neededHeight) {
+        if(y + neededHeight > pageH - 20){
+          doc.addPage();
+          y = 20;
+          return true;
+        }
+        return false;
+      }
+      
+      // Obtener datos filtrados
+      const selGrado = document.getElementById('filterGrado').value;
+      const selGrupo = document.getElementById('filterGrupo').value;
+      const q = (document.getElementById('filterEstudiante').value || '').toLowerCase();
+      
+      const students = analysisData.students.filter(st => {
+        if(selGrado !== 'all' && st.grade !== selGrado) return false;
+        if(selGrupo !== 'all' && st.group !== selGrupo) return false;
+        if(q && !st.name.toLowerCase().includes(q)) return false;
+        return true;
+      });
+      
+      // Analizar tendencias
+      const alerts = [];
+      const trends = [];
+      
+      students.forEach(student => {
+        const studentTrend = analyzeStudentTrend(student);
+        trends.push(studentTrend);
+        
+        if(studentTrend.riskLevel === 'critical' || studentTrend.riskLevel === 'warning'){
+          alerts.push({
+            type: studentTrend.riskLevel,
+            student: student.name,
+            group: student.group,
+            message: studentTrend.alertMessage,
+            trend: studentTrend.trend,
+            failingSubjects: studentTrend.failingSubjects
+          });
+        }
+      });
+      
+      alerts.sort((a,b) => {
+        const priority = {critical: 0, warning: 1, info: 2};
+        return priority[a.type] - priority[b.type];
+      });
+      
+      // Estadísticas
+      const trendStats = {
+        improving: trends.filter(t => t.trend === 'up').length,
+        declining: trends.filter(t => t.trend === 'down').length,
+        stable: trends.filter(t => t.trend === 'stable').length
+      };
+      
+      let y = 30;
+      
+      // Fecha de generación
+      doc.setFontSize(10);
+      doc.text('Fecha de generación: ' + new Date().toLocaleString(), margin, y);
+      y += 10;
+      
+      // Resumen estadístico
+      checkPageBreak(50);
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text('RESUMEN ESTADÍSTICO', margin, y);
+      doc.setFont(undefined, 'normal');
+      y += 8;
+      
+      doc.setFontSize(10);
+      doc.text(`Total de estudiantes analizados: ${students.length}`, margin + 5, y);
+      y += 6;
+      doc.text(`Estudiantes mejorando: ${trendStats.improving} (${students.length ? ((trendStats.improving/students.length)*100).toFixed(1) : 0}%)`, margin + 5, y);
+      y += 6;
+      doc.text(`Estudiantes estables: ${trendStats.stable} (${students.length ? ((trendStats.stable/students.length)*100).toFixed(1) : 0}%)`, margin + 5, y);
+      y += 6;
+      doc.text(`Estudiantes en declive: ${trendStats.declining} (${students.length ? ((trendStats.declining/students.length)*100).toFixed(1) : 0}%)`, margin + 5, y);
+      y += 6;
+      doc.text(`Alertas críticas: ${alerts.filter(a => a.type === 'critical').length}`, margin + 5, y);
+      y += 6;
+      doc.text(`Advertencias: ${alerts.filter(a => a.type === 'warning').length}`, margin + 5, y);
+      y += 12;
+      
+      // Alertas Críticas
+      if(alerts.length > 0){
+        checkPageBreak(20);
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(220, 38, 38);
+        doc.text('ALERTAS TEMPRANAS', margin, y);
+        doc.setTextColor(0);
+        doc.setFont(undefined, 'normal');
+        y += 8;
+        
+        alerts.slice(0, 15).forEach(alert => {
+          // Calcular espacio necesario para esta alerta
+          const messageLines = splitTextToLines(alert.message, 9, maxLineWidth - 10);
+          const subjectsText = alert.failingSubjects.length > 0 ? 
+            `Materias en riesgo: ${alert.failingSubjects.join(', ')}` : '';
+          const subjectsLines = subjectsText ? splitTextToLines(subjectsText, 9, maxLineWidth - 10) : [];
+          const neededHeight = 12 + (messageLines.length * 4) + (subjectsLines.length * 4) + 8;
+          
+          checkPageBreak(neededHeight);
+          
+          doc.setFontSize(10);
+          if(alert.type === 'critical'){
+            doc.setTextColor(220, 38, 38);
+            doc.text('● CRÍTICO', margin + 5, y);
+          } else {
+            doc.setTextColor(255, 193, 7);
+            doc.text('● ADVERTENCIA', margin + 5, y);
+          }
+          doc.setTextColor(0);
+          
+          doc.setFont(undefined, 'bold');
+          const studentText = `${alert.student} - ${alert.group}`;
+          const studentLines = splitTextToLines(studentText, 10, maxLineWidth - 40);
+          doc.text(studentLines, margin + 35, y);
+          doc.setFont(undefined, 'normal');
+          y += Math.max(6, studentLines.length * 5);
+          
+          // Mensaje de alerta con salto de línea automático
+          doc.setFontSize(9);
+          doc.text(messageLines, margin + 10, y);
+          y += messageLines.length * 4;
+          
+          // Materias en riesgo con salto de línea automático
+          if(subjectsLines.length > 0){
+            doc.text(subjectsLines, margin + 10, y);
+            y += subjectsLines.length * 4;
+          }
+          
+          y += 8; // Espaciado entre alertas
+        });
+      }
+      
+      // Top mejorando
+      const improving = trends.filter(t => t.trend === 'up').sort((a,b) => b.improvement - a.improvement).slice(0,5);
+      if(improving.length > 0){
+        checkPageBreak(60);
+        
+        y += 8;
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(34, 197, 94);
+        doc.text('TOP ESTUDIANTES MEJORANDO', margin, y);
+        doc.setTextColor(0);
+        doc.setFont(undefined, 'normal');
+        y += 8;
+        
+        const headImproving = [['Estudiante', 'Grupo', 'Mejora Promedio']];
+        const bodyImproving = improving.map(t => [
+          t.studentName,
+          t.group,
+          `+${t.improvement.toFixed(1)} puntos`
+        ]);
+        
+        doc.autoTable({
+          head: headImproving,
+          body: bodyImproving,
+          startY: y,
+          styles: { fontSize: 9, cellPadding: 2 },
+          headStyles: { fillColor: [34, 197, 94] },
+          margin: {left:margin, right:margin}
+        });
+        y = doc.lastAutoTable.finalY + 8;
+      }
+      
+      // Top en riesgo
+      const declining = trends.filter(t => t.trend === 'down').sort((a,b) => a.improvement - b.improvement).slice(0,5);
+      if(declining.length > 0){
+        checkPageBreak(60);
+        
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(220, 38, 38);
+        doc.text('TOP ESTUDIANTES EN DECLIVE', margin, y);
+        doc.setTextColor(0);
+        doc.setFont(undefined, 'normal');
+        y += 8;
+        
+        const headDeclining = [['Estudiante', 'Grupo', 'Declive Promedio']];
+        const bodyDeclining = declining.map(t => [
+          t.studentName,
+          t.group,
+          `${t.improvement.toFixed(1)} puntos`
+        ]);
+        
+        doc.autoTable({
+          head: headDeclining,
+          body: bodyDeclining,
+          startY: y,
+          styles: { fontSize: 9, cellPadding: 2 },
+          headStyles: { fillColor: [220, 38, 38] },
+          margin: {left:margin, right:margin}
+        });
+      }
+      
+      // Pie de página en todas las páginas
+      const pageCount = doc.internal.getNumberOfPages();
+      for(let i = 1; i <= pageCount; i++){
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(128);
+        doc.text(`Página ${i} de ${pageCount}`, pageW/2, pageH - 10, {align:'center'});
+      }
+      
+      doc.save('tendencias_alertas.pdf');
+    }
+
+    function displayDesempeno(){
+      const container = document.getElementById('desempenoContent');
+      const selGrado   = document.getElementById('filterGrado').value;
+      const selGrupo   = document.getElementById('filterGrupo').value;
+      const selAsig    = document.getElementById('filterAsignatura').value;
+      const selPeriodo = document.getElementById('filterPeriodo').value;
+      const q          = (document.getElementById('filterEstudiante').value || '').toLowerCase();
+
+      let html='';
+      const ini = selPeriodo==='all' ? 1 : parseInt(selPeriodo);
+      const fin = selPeriodo==='all' ? analysisData.config.periodoActual : parseInt(selPeriodo);
+
+      for(let p=ini;p<=fin;p++){
+        const pd = {superior:[], alto:[], basico:[], bajo:[]};
+        ['superior','alto','basico','bajo'].forEach(nivel=>{
+          pd[nivel] = (analysisData.byDesempeno[`P${p}`] ? analysisData.byDesempeno[`P${p}`][nivel] : []).filter(r=>{
+            if(selGrupo!=='all' && r.group!==selGrupo) return false;
+            if(selAsig!=='all' && r.subject!==selAsig) return false;
+            if(selGrado!=='all' && !r.group.includes(selGrado)) return false;
+            if(q && !r.student.toLowerCase().includes(q)) return false; 
+            return true; 
+          });
+        });
+        const total = Object.values(pd).reduce((s,a)=>s+a.length,0);
+        
+        html += `
+        <h3>Período ${p} - Peso: ${analysisData.config.weights[p-1]}%</h3>
+        <div class="stats-grid">
+          <div class="stat-card superior">
+            <div class="stat-label">SUPERIOR</div>
+            <div class="stat-value">${pd.superior.length}</div>
+            <div>${total?((pd.superior.length/total)*100).toFixed(1):0}%</div>
+          </div>
+          <div class="stat-card alto">
+            <div class="stat-label">ALTO</div>
+            <div class="stat-value">${pd.alto.length}</div>
+            <div>${total?((pd.alto.length/total)*100).toFixed(1):0}%</div>
+          </div>
+          <div class="stat-card basico">
+            <div class="stat-label">BÁSICO</div>
+            <div class="stat-value">${pd.basico.length}</div>
+            <div>${total?((pd.basico.length/total)*100).toFixed(1):0}%</div>
+          </div>
+          <div class="stat-card bajo">
+            <div class="stat-label">BAJO</div>
+            <div class="stat-value">${pd.bajo.length}</div>
+            <div>${total?((pd.bajo.length/total)*100).toFixed(1):0}%</div>
+          </div>
+        </div>
+        <table class="performance-table">
+          <thead>
+            <tr>
+              <th>Desempeño</th>
+              <th>Cantidad</th>
+              <th>Porcentaje</th>
+              <th>Estudiantes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="desempeno-superior">SUPERIOR</span></td>
+              <td>${pd.superior.length}</td>
+              <td>${total?((pd.superior.length/total)*100).toFixed(1):0}%</td>
+              <td>${pd.superior.slice(0,3).map(d=>d.student).join(', ')}${pd.superior.length>3?'...':''}</td>
+            </tr>
+            <tr>
+              <td><span class="desempeno-alto">ALTO</span></td>
+              <td>${pd.alto.length}</td>
+              <td>${total?((pd.alto.length/total)*100).toFixed(1):0}%</td>
+              <td>${pd.alto.slice(0,3).map(d=>d.student).join(', ')}${pd.alto.length>3?'...':''}</td>
+            </tr>
+            <tr>
+              <td><span class="desempeno-basico">BÁSICO</span></td>
+              <td>${pd.basico.length}</td>
+              <td>${total?((pd.basico.length/total)*100).toFixed(1):0}%</td>
+              <td>${pd.basico.slice(0,3).map(d=>d.student).join(', ')}${pd.basico.length>3?'...':''}</td>
+            </tr>
+            <tr>
+              <td><span class="desempeno-bajo">BAJO</span></td>
+              <td>${pd.bajo.length}</td>
+              <td>${total?((pd.bajo.length/total)*100).toFixed(1):0}%</td>
+              <td>${pd.bajo.slice(0,3).map(d=>d.student).join(', ')}${pd.bajo.length>3?'...':''}</td>
+            </tr>
+          </tbody>
+        </table>`;
+      }
+      container.innerHTML = html || '<p>Sin datos para los filtros seleccionados.</p>';
+    }
+
+    function displayEstudiantesBajo(){
+      const container = document.getElementById('estudiantesContent');
+      const selGrado   = document.getElementById('filterGrado').value;
+      const selGrupo   = document.getElementById('filterGrupo').value;
+      const selAsig    = document.getElementById('filterAsignatura').value;
+      const selPeriodo = document.getElementById('filterPeriodo').value;
+      const selAcum    = document.getElementById('filterAcumulado').value;
+      const q          = (document.getElementById('filterEstudiante').value || '').toLowerCase();
+
+      const base = (analysisData.studentsInBajo||[]).filter(st=>{
+        if(selGrado!=='all' && st.grade!==selGrado) return false;
+        if(selGrupo!=='all' && st.group!==selGrupo) return false;
+        if(q && !st.name.toLowerCase().includes(q)) return false; 
+        return true;
+      });
+      
+      const filtered = base.filter(student=>{
+        let any=false;
+        Object.entries(student.subjects||{}).forEach(([sub,data])=>{
+          // EXCLUIR asignaturas marcadas
+          if(!shouldIncludeSubject(sub)) return;
+          
+          if(selAsig!=='all' && sub!==selAsig) return;
+          if(selPeriodo!=='all'){ 
+            const p=parseInt(selPeriodo); 
+            if(!data.periods || data.periods[p]==null) return; 
+          }
+          const puntos = (data.puntosParciales!=null?data.puntosParciales:(data.acumulado||0));
+          const corte  = (data.corteAprobacion!=null?data.corteAprobacion:60*((data.pesoParcial||0)/100));
+          if(selAcum==='>=60' && !(puntos>=corte)) return;
+          if(selAcum==='<60' && !(puntos<corte))  return;
+          if((data.pesoParcial||0)>0 && puntos<corte) any=true;
+        });
+        return any;
+      });
+      
+      if(filtered.length===0){ 
+        container.innerHTML='<p>No hay estudiantes con los filtros aplicados.</p>'; 
+        return; 
+      }
+      
+      let html = `<div class="student-list"><h3>Total: ${filtered.length} estudiantes</h3>`;
+      filtered.forEach(student=>{
+        const failed=[];
+        Object.entries(student.subjects||{}).forEach(([sub,data])=>{
+          // EXCLUIR asignaturas marcadas
+          if(!shouldIncludeSubject(sub)) return;
+          
+          if(selAsig!=='all' && sub!==selAsig) return;
+          if(selPeriodo!=='all'){ 
+            const p=parseInt(selPeriodo); 
+            if(!data.periods || data.periods[p]==null) return; 
+          }
+          const puntos = (data.puntosParciales!=null?data.puntosParciales:(data.acumulado||0));
+          const corte  = (data.corteAprobacion!=null?data.corteAprobacion:60*((data.pesoParcial||0)/100));
+          if(selAcum==='>=60' && !(puntos>=corte)) return;
+          if(selAcum==='<60' && !(puntos<corte))  return;
+          if((data.pesoParcial||0)>0 && puntos<corte){
+            const sd = student.subjects && student.subjects[sub];
+            failed.push({
+              name: sub,
+              points: toDisplayValue(puntos, sd),
+              corte:  toDisplayValue(corte, sd),
+              maxVis: getDisplayMaxForSubject(sd)
+            });
+          }
+        });
+
+        const porPeriodo = [];
+        for(let p=1; p<=analysisData.config.periodoActual; p++){
+          const bajas = [];
+          Object.entries(student.subjects||{}).forEach(([sub,sd])=>{
+            // EXCLUIR asignaturas marcadas
+            if(!shouldIncludeSubject(sub)) return;
+            
+            const g = sd.periods ? sd.periods[p] : null;
+            if(g==null) return;
+            const lvl = getPerformanceLevelByRanges(g, sd);
+            if(lvl==='bajo') bajas.push(sub);
+          });
+          porPeriodo.push(`<div><b>P${p}:</b> ${bajas.length? bajas.join(', ') : '—'}</div>`);
+        }
+        
+        const bajasDef = [];
+        Object.entries(student.subjects||{}).forEach(([sub,sd])=>{
+          // EXCLUIR asignaturas marcadas
+          if(!shouldIncludeSubject(sub)) return;
+          
+          if(sd.acumulado==null) return;
+          const lvl = getPerformanceLevelByRanges(sd.acumulado, sd);
+          if(lvl==='bajo') bajasDef.push(sub);
+        });
+
+        // Solo mostrar el estudiante si tiene materias reprobadas no excluidas
+        if(failed.length > 0){
+          html += `<div class="student-item">
+            <div class="student-name">${student.name}</div>
+            <div>Grupo: ${student.group} | Grado: ${student.grade}</div>
+            <div class="subject-list">
+              ${failed.map(s=>`<span class="subject-tag">${s.name}: ${s.points.toFixed(2)} / corte ${s.corte.toFixed(2)} (/${s.maxVis})</span>`).join('')}
+            </div>
+            <div class="hint" style="margin-top:6px">
+              ${porPeriodo.join('')}
+              <div><b>Definitivo:</b> ${bajasDef.length? bajasDef.join(', ') : '—'}</div>
+            </div>
+          </div>`;
+        }
+      });
+      html += '</div>'; 
+      container.innerHTML = html;
+    }
+
+    function displayNotasMinimas(){
+      const container = document.getElementById('notasContent');
+      const selGrado   = document.getElementById('filterGrado').value;
+      const selGrupo   = document.getElementById('filterGrupo').value;
+      const selAsig    = document.getElementById('filterAsignatura').value;
+      const selAcum    = document.getElementById('filterAcumulado').value;
+      const q          = (document.getElementById('filterEstudiante').value || '').toLowerCase();
+      
+      const base = analysisData.students.filter(st=>{
+        if(selGrado!=='all' && st.grade!==selGrado) return false;
+        if(selGrupo!=='all' && st.group!==selGrupo) return false;
+        if(q && !st.name.toLowerCase().includes(q)) return false; 
+        return true;
+      });
+      
+      let rows=0; 
+      let html = `<table class="performance-table">
+        <thead>
+          <tr>
+            <th>Estudiante</th>
+            <th>Grupo</th>
+            <th>Asignatura</th>
+            <th>Acumulado Parcial</th>
+            <th>Nota Necesaria</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>`;
+        
+      base.forEach(st=>{
+        Object.entries(st.minimumGrades||{}).forEach(([sub,data])=>{
+          // EXCLUIR asignaturas marcadas
+          if(!shouldIncludeSubject(sub)) return;
+          
+          if(selAsig!=='all' && sub!==selAsig) return;
+          const corteN = data.corteParcial || 60;
+          const currentN = data.current || 0;
+          if(selAcum==='>=60' && !(currentN>=corteN)) return;
+          if(selAcum==='<60' && !(currentN<corteN))  return;
+
+          const sd = st.subjects && st.subjects[sub];
+          const currentDisp = toDisplayValue(currentN, sd);
+          const corteDisp   = toDisplayValue(corteN, sd);
+          const neededDisp  = toDisplayValue(data.needed || 0, sd);
+          const maxVis      = getDisplayMaxForSubject(sd);
+
+          const status = (data.needed>100) ? 'IMPOSIBLE'
+                       : (data.needed>85) ? 'CRÍTICO'
+                       : (data.needed>70) ? 'DIFÍCIL'
+                       : 'POSIBLE';
+
+          html += `<tr>
+            <td>${st.name}</td>
+            <td>${st.group}</td>
+            <td>${sub}</td>
+            <td>${currentDisp.toFixed(2)} / corte ${corteDisp.toFixed(2)} <span class="hint">(/${maxVis})</span></td>
+            <td>${neededDisp.toFixed(2)}</td>
+            <td><span class="desempeno-${status==='IMPOSIBLE'?'bajo':(status==='CRÍTICO'?'basico':'alto')}">${status}</span></td>
+          </tr>`;
+          rows++;
+        });
+      });
+      html += `</tbody></table>`; 
+      container.innerHTML = rows ? html : '<p>Sin resultados para los filtros seleccionados.</p>';
+    }
+
+    function displayAsignaturas(){
+      const container = document.getElementById('asignaturasContent');
+      const selGrado   = document.getElementById('filterGrado').value;
+      const selGrupo   = document.getElementById('filterGrupo').value;
+      const selAsig    = document.getElementById('filterAsignatura').value;
+      const selPeriodo = document.getElementById('filterPeriodo').value;
+      const selAcum    = document.getElementById('filterAcumulado').value;
+      const q          = (document.getElementById('filterEstudiante').value || '').toLowerCase();
+
+      const students = analysisData.students.filter(st=>{
+        if(selGrado!=='all' && st.grade!==selGrado) return false;
+        if(selGrupo!=='all' && st.group!==selGrupo) return false;
+        if(q && !st.name.toLowerCase().includes(q)) return false;
+        return true;
+      });
+
+      const P = analysisData.config.periodoActual;
+
+      const stats = {};
+      analysisData.subjects.forEach(sub=>{
+        // EXCLUIR asignaturas marcadas
+        if(!shouldIncludeSubject(sub)) return;
+        
+        if(selAsig!=='all' && sub!==selAsig) return;
+        stats[sub] = { count:0, per:{}, def:{sum:0,c:0} };
+        for(let p=1;p<=P;p++) stats[sub].per[p] = {sum:0,c:0};
+      });
+
+      students.forEach(st=>{
+        Object.entries(st.subjects||{}).forEach(([sub,sd])=>{
+          if(!(sub in stats)) return;
+          if(selPeriodo!=='all'){
+            const p = parseInt(selPeriodo);
+            if(!sd.periods || sd.periods[p]==null) return;
+          }
+          const puntos = (sd.puntosParciales!=null?sd.puntosParciales:(sd.acumulado||0));
+          const corte  = (sd.corteAprobacion!=null?sd.corteAprobacion:60*((sd.pesoParcial||0)/100));
+          if(selAcum==='>=60' && !(puntos>=corte)) return;
+          if(selAcum==='<60' && !(puntos<corte))  return;
+
+          for(let p=1;p<=P;p++){
+            const g = sd.periods ? sd.periods[p] : null;
+            if(g!=null && isFinite(g)){
+              stats[sub].per[p].sum += g; 
+              stats[sub].per[p].c++;
+            }
+          }
+          if(sd.acumulado!=null && isFinite(sd.acumulado)){
+            stats[sub].def.sum += sd.acumulado; 
+            stats[sub].def.c++;
+          }
+          stats[sub].count++;
+        });
+      });
+
+      let thead = `<thead><tr>
+        <th>Asignatura</th>`;
+      for(let p=1;p<=P;p++) thead += `<th>Período ${p}</th>`;
+      thead += `<th>Definitivo</th></tr></thead>`;
+
+      let rows = '';
+      Object.entries(stats).forEach(([sub,st])=>{
+        let tds = '';
+        for(let p=1;p<=P;p++){
+          if(st.per[p].c===0){ 
+            tds += `<td>—</td>`; 
+            continue; 
+          }
+          const avg = st.per[p].sum / st.per[p].c;
+          const lvl = getPerformanceLevelByRanges(avg, { scale: (fixedScaleFromMode() ?? 1) });
+          const vis = toDisplayValue(avg, { scale: (fixedScaleFromMode() ?? 1) });
+          tds += `<td>${vis.toFixed(2)} <span class="hint">(${lvl})</span></td>`;
+        }
+        if(st.def.c===0){
+          tds += `<td>—</td>`;
+        } else {
+          const avgD = st.def.sum / st.def.c;
+          const lvlD = getPerformanceLevelByRanges(avgD, { scale: (fixedScaleFromMode() ?? 1) });
+          const visD = toDisplayValue(avgD, { scale: (fixedScaleFromMode() ?? 1) });
+          tds += `<td><b>${visD.toFixed(2)}</b> <span class="hint">(${lvlD})</span></td>`;
+        }
+        rows += `<tr><td>${sub}</td>${tds}</tr>`;
+      });
+
+      const html = `<table class="performance-table">${thead}<tbody>${rows}</tbody></table>`;
+      container.innerHTML = rows ? html : '<p>Sin resultados para los filtros seleccionados.</p>';
+    }
+
+    // ==================== Dashboard por Asignatura con TOP 5 =====================
+    function renderDashboardAsignatura(){
+      const el = document.getElementById('dashAsigContent');
+      if(!el) return;
+
+      const selAsig    = document.getElementById('filterAsignatura').value;
+      const selGrado   = document.getElementById('filterGrado').value;
+      const selGrupo   = document.getElementById('filterGrupo').value;
+      const q          = (document.getElementById('filterEstudiante').value || '').toLowerCase();
+      const P          = analysisData.config.periodoActual;
+
+      if(selAsig==='all'){
+        el.innerHTML = `<div class="hint">Selecciona una <b>Asignatura</b> en los filtros de arriba para ver el dashboard.</div>`;
+        return;
+      }
+
+      const rows = [];
+      let sdExample = null;
+      analysisData.students.forEach(st=>{
+        if(selGrado!=='all' && st.grade!==selGrado) return;
+        if(selGrupo!=='all' && st.group!==selGrupo) return;
+        if(q && !st.name.toLowerCase().includes(q)) return;
+        const sd = st.subjects && st.subjects[selAsig];
+        if(!sd) return;
+        rows.push({ st, sd });
+        if(!sdExample) sdExample = sd;
+      });
+
+      if(rows.length===0){
+        el.innerHTML = `<div class="hint">No hay datos para la asignatura <b>${selAsig}</b> con los filtros aplicados.</div>`;
+        return;
+      }
+
+      const maxVis = getDisplayMaxForSubject(sdExample);
+      let sumAcum=0, nAcum=0, aprobTot=0, reprobTot=0;
+
+      // Calcular promedios y obtener TOP 5
+      const studentScores = [];
+      rows.forEach(({st,sd})=>{
+        const puntos = (sd.puntosParciales!=null?sd.puntosParciales:(sd.acumulado||0));
+        const corte  = (sd.corteAprobacion!=null?sd.corteAprobacion:60*((sd.pesoParcial||0)/100));
+        if(isFinite(puntos)){ 
+          sumAcum+=puntos; 
+          nAcum++; 
+          studentScores.push({
+            name: st.name,
+            group: st.group,
+            score: puntos,
+            displayScore: toDisplayValue(puntos, sd)
+          });
+        }
+        if((sd.pesoParcial||0)>0){
+          if(puntos>=corte) aprobTot++; else reprobTot++;
+        }
+      });
+
+      // Ordenar y obtener TOP 5
+      studentScores.sort((a,b) => b.score - a.score);
+      const top5 = studentScores.slice(0, 5);
+
+      const totalEst = rows.length;
+      const promGeneralVis = nAcum? toDisplayValue(sumAcum/nAcum, sdExample).toFixed(1) : '—';
+      const aprobPct = totalEst? ((aprobTot/totalEst)*100).toFixed(1) : '0.0';
+      const reprobPct = totalEst? ((reprobTot/totalEst)*100).toFixed(1) : '0.0';
+
+      const porGrupo = new Map();
+      rows.forEach(({st,sd})=>{
+        if(!porGrupo.has(st.group)) porGrupo.set(st.group,{n:0,sum:0,ap:0,rp:0});
+        const g = porGrupo.get(st.group);
+        g.n++;
+        const puntos = (sd.puntosParciales!=null?sd.puntosParciales:(sd.acumulado||0));
+        if(isFinite(puntos)) g.sum+=puntos;
+        const corte  = (sd.corteAprobacion!=null?sd.corteAprobacion:60*((sd.pesoParcial||0)/100));
+        if((sd.pesoParcial||0)>0){
+          if(puntos>=corte) g.ap++; else g.rp++;
+        }
+      });
+
+      const perStats = [];
+      for(let p=1;p<=P;p++){
+        let ap=0, rp=0, conDato=0;
+        rows.forEach(({sd})=>{
+          const val = sd.periods ? sd.periods[p] : null;
+          if(val==null) return;
+          conDato++;
+          if(val>=60) ap++; else rp++;
+        });
+        const pct = conDato? ((ap/conDato)*100).toFixed(1) : '0.0';
+        perStats.push({p, peso: analysisData.config.weights[p-1]||0, ap, rp, pct});
+      }
+
+      const riesgo = [];
+      rows.forEach(({st,sd})=>{
+        const puntos = (sd.puntosParciales!=null?sd.puntosParciales:(sd.acumulado||0));
+        const corte  = (sd.corteAprobacion!=null?sd.corteAprobacion:60*((sd.pesoParcial||0)/100));
+        if((sd.pesoParcial||0)>0 && puntos < corte){
+          const visAcum = toDisplayValue(puntos, sd).toFixed(1);
+          const pCols = [];
+          for(let i=1;i<=P;i++){
+            const v = sd.periods && isFinite(sd.periods[i]) ? toDisplayValue(sd.periods[i], sd).toFixed(1) : '—';
+            pCols.push(v);
+          }
+          riesgo.push({ nombre: st.name, grupo: st.group, acum: visAcum, pCols });
+        }
+      });
+      riesgo.sort((a,b)=>parseFloat(a.acum)-parseFloat(b.acum));
+
+      // HTML para TOP 5
+      const top5HTML = top5.length > 0 ? `
+        <div class="top-students">
+          <h4>🏆 TOP 5 Mejores Estudiantes</h4>
+          ${top5.map((st, idx) => {
+            const rankClass = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : '';
+            return `
+              <div class="top-student-item">
+                <div style="display:flex;align-items:center">
+                  <span class="rank ${rankClass}">${idx + 1}</span>
+                  <div>
+                    <strong>${st.name}</strong>
+                    <div style="font-size:12px;color:#718096">${st.group}</div>
+                  </div>
+                </div>
+                <div style="font-size:20px;font-weight:bold;color:#2c5282">
+                  ${st.displayScore.toFixed(1)}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      ` : '';
+
+      const kpiCards = `
+      <div class="stats-grid" style="margin-top:10px">
+        <div class="stat-card" style="border-left-color:#6c63ff">
+          <div class="stat-label">Total Estudiantes</div>
+          <div class="stat-value">${totalEst}</div>
+        </div>
+        <div class="stat-card" style="border-left-color:#00b894">
+          <div class="stat-label">Promedio General (/${maxVis})</div>
+          <div class="stat-value">${promGeneralVis}</div>
+        </div>
+        <div class="stat-card" style="border-left-color:#2ecc71">
+          <div class="stat-label">Aprobación Total</div>
+          <div class="stat-value">${aprobPct}%</div>
+        </div>
+        <div class="stat-card" style="border-left-color:#e17055">
+          <div class="stat-label">Reprobación Total</div>
+          <div class="stat-value">${reprobPct}%</div>
+        </div>
+      </div>`;
+
+      const tablaGrupoHead = `
+        <thead>
+          <tr>
+            <th>Grupo</th><th>Estudiantes</th><th>Promedio</th>
+            <th>Aprobados</th><th>% Aprobación</th>
+            <th>Reprobados</th><th>% Reprobación</th>
+          </tr>
+        </thead>`;
+      let tablaGrupoBody = '';
+      [...porGrupo.entries()].sort(([a],[b])=>a.localeCompare(b)).forEach(([g,v])=>{
+        const avg = v.n? toDisplayValue(v.sum/v.n, sdExample).toFixed(1) : '—';
+        const pAp = v.n? ((v.ap/v.n)*100).toFixed(1)+'%' : '0%';
+        const pRp = v.n? ((v.rp/v.n)*100).toFixed(1)+'%' : '0%';
+        tablaGrupoBody += `<tr>
+          <td>${g}</td><td>${v.n}</td><td>${avg}</td>
+          <td>${v.ap}</td><td style="color:#16a34a">${pAp}</td>
+          <td>${v.rp}</td><td style="color:#dc2626">${pRp}</td>
+        </tr>`;
+      });
+
+      const cardsPeriodos = perStats.map(ps=>`
+        <div class="stat-card" style="background:#fef3c7;border-left-color:#f59e0b">
+          <div style="font-weight:700">Período ${ps.p} (${ps.peso}%)</div>
+          <div class="stat-value" style="margin:8px 0">${ps.pct}%</div>
+          <div class="hint">${ps.ap} Aprobados · ${ps.rp} Reprobados</div>
+        </div>
+      `).join('');
+
+      let tablaRiesgo = '';
+      if(riesgo.length){
+        const head = `<thead><tr>
+          <th>Estudiante</th><th>Grupo</th><th>Nota Acumulada</th>
+          ${Array.from({length:P},(_,i)=>`<th>P${i+1}</th>`).join('')}
+        </tr></thead>`;
+        let body = '';
+        riesgo.forEach(r=>{
+          body += `<tr>
+            <td>${r.nombre}</td><td>${r.grupo}</td><td style="color:#dc2626">${r.acum}</td>
+            ${r.pCols.map(v=>`<td>${v}</td>`).join('')}
+          </tr>`;
+        });
+        tablaRiesgo = `<table class="performance-table">${head}<tbody>${body}</tbody></table>`;
+      } else {
+        tablaRiesgo = `<div class="hint">No hay estudiantes en riesgo con los filtros actuales.</div>`;
+      }
+
+      el.innerHTML = `
+        <div class="card" style="padding:16px;border-radius:12px;border:1px solid #eee">
+          <h3 style="margin-bottom:6px">📘 ${selAsig}</h3>
+          ${kpiCards}
+          
+          ${top5HTML}
+
+          <h4 style="margin-top:18px">📌 Análisis por Grupo</h4>
+          <table class="performance-table">${tablaGrupoHead}<tbody>${tablaGrupoBody}</tbody></table>
+
+          <h4 style="margin-top:18px">🗓️ Análisis por Período</h4>
+          <div class="stats-grid">${cardsPeriodos}</div>
+
+          <h4 style="margin-top:18px">🚩 Estudiantes en Riesgo (${riesgo.length})</h4>
+          ${tablaRiesgo}
+        </div>
+      `;
+    }
+
+    // ==================== Re-cómputo con nueva config =====================
+    function recomputeWithConfig(){
+      const cfg = analysisData.config;
+      const fixedScale = fixedScaleFromMode();
+      analysisData.students.forEach(st=>{
+        st.minimumGrades = {};
+        Object.entries(st.subjects||{}).forEach(([sub,sd])=>{
+          const scale = (fixedScale!=null) ? fixedScale : (sd.scale || 1);
+          if(sd.periods){
+            Object.keys(sd.periods).forEach(k=>{
+              const rawVal = sd.rawPeriods ? sd.rawPeriods[k] : sd.periods[k];
+              let normalized;
+              if(isFinite(rawVal)){ 
+                normalized = normalizeByScale(rawVal, scale); 
+              }
+              else if(isLetterGrade(rawVal)){ 
+                normalized = letterTo5(rawVal) * (100/5); 
+              }
+              else { 
+                normalized = sd.periods[k]; 
+              }
+              sd.periods[k] = normalized;
+            });
+          }
+          if(typeof sd.rawAcum === 'number'){
+            sd.acumulado = normalizeByScale(sd.rawAcum, scale);
+          } else if(isLetterGrade(sd.rawAcum)){
+            sd.acumulado = letterTo5(sd.rawAcum) * (100/5);
+          }
+
+          let puntos=0, peso=0;
+          for(let pp=1; pp<=cfg.periodoActual; pp++){
+            const g = sd.periods ? sd.periods[pp] : undefined;
+            if(typeof g==='number'){ 
+              puntos += g * (cfg.weights[pp-1]||0)/100; 
+              peso += (cfg.weights[pp-1]||0); 
+            }
+          }
+          sd.puntosParciales = puntos;
+          sd.pesoParcial = peso;
+          sd.corteAprobacion = 60 * (peso/100);
+          sd.onTrack = peso>0 ? (puntos >= sd.corteAprobacion) : false;
+
+          if(cfg.periodoActual>=cfg.numPeriodos){
+            st.minimumGrades[sub] = { 
+              current: sd.puntosParciales || sd.acumulado || 0, 
+              needed: 0, 
+              possible: true, 
+              corteParcial: sd.corteAprobacion 
+            };
+          }else{
+            const acc = sd.puntosParciales || 0;
+            const remaining = 100 - (sd.pesoParcial||0);
+            const needed = remaining>0 ? ((60 - acc) * 100) / remaining : 0;
+            st.minimumGrades[sub] = { 
+              current: acc, 
+              needed: Math.max(0,needed), 
+              possible: needed<=100, 
+              corteParcial: sd.corteAprobacion 
+            };
+          }
+        });
+      });
+    }
+
+    // ==================== Tabs =====================
+    function showTab(ev,tabName){
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+      ev.target.classList.add('active');
+      document.getElementById(tabName).classList.add('active');
+    }
+
+    // ==================== Tutorial =====================
+    function showTutorial(){
+      const modal = document.getElementById('tutorialModal');
+      if(modal) {
+        modal.style.display = 'block';
+      }
+    }
+    
+    function closeTutorial(){
+      const modal = document.getElementById('tutorialModal');
+      if(modal) {
+        modal.style.display = 'none';
+      }
+    }
+
+    // Cerrar modal al hacer clic fuera
+    window.onclick = function(event) {
+      const modal = document.getElementById('tutorialModal');
+      if (event.target == modal) {
+        modal.style.display = 'none';
+      }
+    }
+    
+    // Asegurarse de que las funciones estén disponibles globalmente
+    window.showTutorial = showTutorial;
+    window.closeTutorial = closeTutorial;
+
+    // ==================== Exportaciones =====================
+    function exportToExcel(){
+      const wb = XLSX.utils.book_new();
+      const wsData=[["ANÁLISIS DE DESEMPEÑO ACADÉMICO"],[],["Período","Superior","Alto","Básico","Bajo","Total"]];
+      const ini=1, fin=analysisData.config.periodoActual;
+      for(let p=ini;p<=fin;p++){
+        const pd = analysisData.byDesempeno[`P${p}`]||{superior:[],alto:[],basico:[],bajo:[]};
+        const total = Object.values(pd).reduce((s,a)=>s+(a?.length||0),0);
+        wsData.push([`Período ${p}`,pd.superior.length,pd.alto.length,pd.basico.length,pd.bajo.length,total]);
+      }
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(wsData),'Resumen');
+
+      const wsData2=[["ESTUDIANTES EN RIESGO (corte parcial)"],[],["Estudiante","Grupo","Grado","Asignaturas (puntos/corte)"]];
+      (analysisData.studentsInBajo||[]).forEach(st=>{
+        const failed=[]; 
+        Object.entries(st.subjects||{}).forEach(([sub,data])=>{
+          const puntos=data.puntosParciales!=null?data.puntosParciales:(data.acumulado||0);
+          const corte=data.corteAprobacion!=null?data.corteAprobacion:60*((data.pesoParcial||0)/100);
+          if((data.pesoParcial||0)>0 && puntos<corte) failed.push(`${sub}(${puntos.toFixed(2)}/${corte.toFixed(2)})`);
+        });
+        if(failed.length) wsData2.push([st.name,st.group,st.grade,failed.join(', ')]);
+      });
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(wsData2),'En riesgo');
+      XLSX.writeFile(wb,'analisis_academico.xlsx');
+    }
+
+    function exportToPDF(){
+      const { jsPDF } = window.jspdf; 
+      const doc = new jsPDF();
+      doc.setFontSize(18); 
+      doc.text('ANÁLISIS DE DESEMPEÑO ACADÉMICO',105,20,{align:'center'});
+      doc.setFontSize(12); 
+      let y=40; 
+      for(let p=1;p<=analysisData.config.periodoActual;p++){
+        const pd = analysisData.byDesempeno[`P${p}`]||{superior:[],alto:[],basico:[],bajo:[]}; 
+        const total = Object.values(pd).reduce((s,a)=>s+(a?.length||0),0);
+        doc.text(`Período ${p}:`,20,y); y+=10;
+        doc.text(`- Superior: ${pd.superior.length} (${total?((pd.superior.length/total)*100).toFixed(1):0}%)`,30,y); y+=7;
+        doc.text(`- Alto: ${pd.alto.length} (${total?((pd.alto.length/total)*100).toFixed(1):0}%)`,30,y); y+=7;
+        doc.text(`- Básico: ${pd.basico.length} (${total?((pd.basico.length/total)*100).toFixed(1):0}%)`,30,y); y+=7;
+        doc.text(`- Bajo: ${pd.bajo.length} (${total?((pd.bajo.length/total)*100).toFixed(1):0}%)`,30,y); y+=15;
+        if(y>270){ doc.addPage(); y=20; }
+      }
+      doc.addPage(); 
+      doc.setFontSize(14); 
+      doc.text('ESTUDIANTES EN RIESGO (corte parcial)',20,20);
+      y=40; 
+      doc.setFontSize(10);
+      (analysisData.studentsInBajo||[]).forEach(st=>{ 
+        doc.text(`${st.name} - ${st.group}`,20,y); 
+        y+=7; 
+        if(y>270){ doc.addPage(); y=20; }
+      });
+      doc.save('analisis_academico.pdf');
+    }
+
+    function exportAsignaturasPDF(){
+  const { jsPDF } = window.jspdf; 
+  const doc = new jsPDF('p','mm','letter');
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  
+  let y = 18;
+  doc.setFillColor(60,74,87); 
+  doc.rect(10,10,pageW-20,10,'F');
+  doc.setTextColor(255); 
+  doc.setFontSize(14); 
+  doc.text('DESEMPEÑOS Y CRITERIOS DE EVALUACIÓN - POR ASIGNATURA', pageW/2,17, {align:'center'});
+  doc.setTextColor(0);
+  y = 30;
+
+  const stats = buildSubjectStatsForPDF();
+  
+  if(stats.length === 0){
+    doc.setFontSize(12);
+    doc.text('No hay datos disponibles para generar el reporte.', pageW/2, y + 20, {align:'center'});
+    doc.save('desempenos_por_asignatura.pdf');
+    return;
+  }
+  
+  stats.forEach((subjectData, subjectIndex) => {
+    // Header de la asignatura
+    if(y > pageH - 80) { 
+      doc.addPage(); 
+      y = 20; 
+    }
+    
+    doc.setFillColor(70,85,100);
+    doc.rect(10, y, pageW-20, 8, 'F');
+    doc.setTextColor(255);
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'bold');
+    doc.text(subjectData.subject.toUpperCase(), 15, y + 5.5);
+    doc.setTextColor(0);
+    doc.setFont(undefined, 'normal');
+    y += 15;
+    
+    // Tabla por cada período
+    subjectData.periods.forEach((s, periodIndex) => {
+      if(y > pageH - 25) { 
+        doc.addPage(); 
+        y = 20; 
+      }
+      
+      // Subtítulo del período
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'bold');
+      doc.text(`PERÍODO ${s.periodo}`, 15, y);
+      doc.setFont(undefined, 'normal');
+      y += 8;
+      
+      // Tabla de datos
+      const tableX = 15;
+      const colWidths = [12, 12, 12, 12, 8];
+      let currentX = tableX;
+      
+      // Headers
+      doc.setFillColor(240,240,240);
+      for(let i = 0; i < colWidths.length; i++){
+        doc.rect(currentX, y, colWidths[i], 6, 'F');
+        currentX += colWidths[i];
+      }
+      
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'bold');
+      doc.text('B', tableX + colWidths[0]/2, y + 4, {align:'center'});
+      doc.text('BA', tableX + colWidths[0] + colWidths[1]/2, y + 4, {align:'center'});
+      doc.text('A', tableX + colWidths[0] + colWidths[1] + colWidths[2]/2, y + 4, {align:'center'});
+      doc.text('S', tableX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3]/2, y + 4, {align:'center'});
+      doc.text('T', tableX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4]/2, y + 4, {align:'center'});
+      y += 8;
+      
+      // Fila de cantidades
+      doc.setFont(undefined, 'normal');
+      doc.text(String(s.B), tableX + colWidths[0]/2, y + 3.5, {align:'center'});
+      doc.text(String(s.BA), tableX + colWidths[0] + colWidths[1]/2, y + 3.5, {align:'center'});
+      doc.text(String(s.A), tableX + colWidths[0] + colWidths[1] + colWidths[2]/2, y + 3.5, {align:'center'});
+      doc.text(String(s.S), tableX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3]/2, y + 3.5, {align:'center'});
+      doc.text(String(s.total), tableX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4]/2, y + 3.5, {align:'center'});
+      y += 7;
+      
+      // Fila de porcentajes
+      doc.text(`${s.pB}%`, tableX + colWidths[0]/2, y + 3, {align:'center'});
+      doc.text(`${s.pBA}%`, tableX + colWidths[0] + colWidths[1]/2, y + 3, {align:'center'});
+      doc.text(`${s.pA}%`, tableX + colWidths[0] + colWidths[1] + colWidths[2]/2, y + 3, {align:'center'});
+      doc.text(`${s.pS}%`, tableX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3]/2, y + 3, {align:'center'});
+      doc.text('100%', tableX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4]/2, y + 3, {align:'center'});
+      y += 10;
+      
+      // Gráfica de barras de niveles de desempeño
+      const barX = tableX + 70;
+      const barY = y - 17;
+      const barW = 60;
+      const barH = 8;
+      
+      doc.setFontSize(7);
+      doc.text('Niveles de desempeño', barX, barY - 2);
+      
+      // Calcular proporciones
+      const wB = barW * (parseFloat(s.pB)/100);
+      const wBA = barW * (parseFloat(s.pBA)/100);
+      const wA = barW * (parseFloat(s.pA)/100);
+      const wS = barW * (parseFloat(s.pS)/100);
+      
+      let accX = barX;
+      
+      // BAJO - Rojo
+      if(wB > 0){
+        doc.setFillColor(254,215,215);
+        doc.rect(accX, barY, wB, barH, 'F');
+        accX += wB;
+      }
+      
+      // BÁSICO - Naranja
+      if(wBA > 0){
+        doc.setFillColor(254,235,200);
+        doc.rect(accX, barY, wBA, barH, 'F');
+        accX += wBA;
+      }
+      
+      // ALTO - Azul
+      if(wA > 0){
+        doc.setFillColor(190,227,248);
+        doc.rect(accX, barY, wA, barH, 'F');
+        accX += wA;
+      }
+      
+      // SUPERIOR - Verde
+      if(wS > 0){
+        doc.setFillColor(198,246,213);
+        doc.rect(accX, barY, wS, barH, 'F');
+      }
+      
+      // Borde
+      doc.setDrawColor(160);
+      doc.setLineWidth(0.2);
+      doc.rect(barX, barY, barW, barH, 'S');
+      
+      // Indicador de reprobación
+      const repX = barX + 75;
+      const repW = 30;
+      const repPct = parseFloat(s.failRate);
+      
+      doc.text('Tasa de reprobación', repX, barY - 2);
+      doc.setDrawColor(200);
+      doc.line(repX, barY + barH/2, repX + repW, barY + barH/2);
+      
+      const cx = repX + repW * (repPct/100);
+      doc.setFillColor(66,153,225);
+      doc.circle(cx, barY + barH/2, 1, 'F');
+      doc.setFontSize(6);
+      doc.text(`${repPct}%`, cx, barY + barH + 3, {align:'center'});
+      
+      y += 5;
+    });
+    
+    // Separador entre asignaturas
+    if(subjectIndex < stats.length - 1){
+      doc.setDrawColor(220);
+      doc.line(15, y, pageW - 15, y);
+      y += 10;
+    }
+  });
+  
+  doc.save('desempenos_por_asignatura.pdf');
+}
+
+    function buildSubjectStatsForPDF(){
+  const selGrado   = document.getElementById('filterGrado').value;
+  const selGrupo   = document.getElementById('filterGrupo').value;
+  const selAsig    = document.getElementById('filterAsignatura').value;
+  const q          = (document.getElementById('filterEstudiante').value || '').toLowerCase();
+
+  const students = analysisData.students.filter(st=>{
+    if(selGrado!=='all' && st.grade!==selGrado) return false;
+    if(selGrupo!=='all' && st.group!==selGrupo) return false;
+    if(q && !st.name.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  const results = [];
+  const P = analysisData.config.periodoActual;
+
+  analysisData.subjects.forEach(subject=>{
+    if(!shouldIncludeSubject(subject)) return;
+    if(selAsig!=='all' && subject!==selAsig) return;
+
+    // Contar por cada período
+    const periodStats = [];
+    
+    for(let periodo = 1; periodo <= P; periodo++){
+      let total = 0, cB = 0, cBa = 0, cA = 0, cS = 0, failed = 0;
+      
+      students.forEach(st => {
+        const sd = st.subjects && st.subjects[subject];
+        if(!sd || !sd.periods || sd.periods[periodo] == null) return;
+        
+        total++;
+        const gradeNorm = sd.periods[periodo]; // Ya está normalizado 0-100
+        const level = getPerformanceLevelByRanges(gradeNorm, sd);
+        
+        // Contar por nivel de desempeño
+        if(level === 'bajo') cB++;
+        else if(level === 'basico') cBa++;
+        else if(level === 'alto') cA++;
+        else if(level === 'superior') cS++;
+        
+        // Contar reprobados (menos de 60 en escala 0-100)
+        if(gradeNorm < 60) failed++;
+      });
+      
+      if(total > 0){
+        const pct = n => ((n/total*100)||0).toFixed(0);
+        periodStats.push({
+          periodo,
+          total,
+          B: cB, BA: cBa, A: cA, S: cS,
+          pB: pct(cB), pBA: pct(cBa), pA: pct(cA), pS: pct(cS),
+          failRate: pct(failed)
+        });
+      }
+    }
+    
+    if(periodStats.length > 0){
+      results.push({
+        subject,
+        periods: periodStats
+      });
+    }
+  });
+  
+  return results;
+}
+    function exportEstudiantesBajoPDF(){
+      const { jsPDF } = window.jspdf; 
+      const doc = new jsPDF('p','mm','letter');
+      const pageW = doc.internal.pageSize.getWidth();
+      
+      // Header
+      doc.setFillColor(60,74,87); 
+      doc.rect(10,10,pageW-20,10,'F');
+      doc.setTextColor(255); 
+      doc.setFontSize(14); 
+      doc.text('ESTUDIANTES CON DESEMPEÑO BAJO', pageW/2,17, {align:'center'});
+      doc.setTextColor(0);
+      
+      // Obtener estudiantes filtrados
+      const selGrado   = document.getElementById('filterGrado').value;
+      const selGrupo   = document.getElementById('filterGrupo').value;
+      const q          = (document.getElementById('filterEstudiante').value || '').toLowerCase();
+      
+      const base = (analysisData.studentsInBajo||[]).filter(st=>{
+        if(selGrado!=='all' && st.grade!==selGrado) return false;
+        if(selGrupo!=='all' && st.group!==selGrupo) return false;
+        if(q && !st.name.toLowerCase().includes(q)) return false; 
+        return true;
+      });
+      
+      let y = 30;
+      doc.setFontSize(10);
+      
+      base.forEach(student=>{
+        const failed=[];
+        Object.entries(student.subjects||{}).forEach(([sub,data])=>{
+          if(!shouldIncludeSubject(sub)) return;
+          const puntos = (data.puntosParciales!=null?data.puntosParciales:(data.acumulado||0));
+          const corte  = (data.corteAprobacion!=null?data.corteAprobacion:60*((data.pesoParcial||0)/100));
+          if((data.pesoParcial||0)>0 && puntos<corte){
+            const sd = student.subjects && student.subjects[sub];
+            failed.push({
+              name: sub,
+              points: toDisplayValue(puntos, sd),
+              corte:  toDisplayValue(corte, sd)
+            });
+          }
+        });
+        
+        if(failed.length > 0){
+          if(y > 250){
+            doc.addPage();
+            y = 20;
+          }
+          
+          doc.setFontSize(11);
+          doc.setFont(undefined, 'bold');
+          doc.text(`${student.name}`, 20, y);
+          doc.setFont(undefined, 'normal');
+          doc.setFontSize(9);
+          doc.text(`Grupo: ${student.group} | Grado: ${student.grade}`, 20, y+5);
+          y += 10;
+          
+          failed.forEach(f => {
+            doc.text(`• ${f.name}: ${f.points.toFixed(2)} / ${f.corte.toFixed(2)}`, 25, y);
+            y += 5;
+          });
+          y += 5;
+        }
+      });
+      
+      doc.save('estudiantes_bajo_rendimiento.pdf');
+    }
+
+    function exportNotasMinimasPDF(){
+      const { jsPDF } = window.jspdf; 
+      // Cambiar a orientación horizontal (landscape)
+      const doc = new jsPDF('l','mm','letter'); // 'l' = landscape
+      const pageW = doc.internal.pageSize.getWidth();
+      
+      doc.setFillColor(60,74,87); 
+      doc.rect(10,10,pageW-20,10,'F');
+      doc.setTextColor(255); 
+      doc.setFontSize(14); 
+      doc.text('REPORTE DE NOTAS MÍNIMAS NECESARIAS', pageW/2,17, {align:'center'});
+      doc.setTextColor(0);
+
+      const rows = buildNotasMinimasRows();
+      let y = 26;
+      
+      // Ajustar posiciones de columnas para aprovechar el ancho horizontal
+      const header = ['Estudiante','Grupo','Asignatura','Acumulado','Corte','Nota Necesaria','Estado'];
+      const colX = [12,80,120,180,210,235,260];
+      
+      doc.setFontSize(9); 
+      header.forEach((h,i) => doc.text(h,colX[i],y));
+      y+=4; 
+      doc.line(10,y,pageW-10,y);
+      
+      rows.forEach(r=>{
+        if(y>190){ // Ajustar límite de página para orientación horizontal
+          doc.addPage(); 
+          y=20; 
+          doc.setFontSize(9); 
+          header.forEach((h,i) => doc.text(h,colX[i],y));
+          y+=4; 
+          doc.line(10,y,pageW-10,y); 
+        }
+        doc.setFontSize(8);
+        doc.text(r.estudiante.substring(0,30), colX[0], y+4);
+        doc.text(r.grupo.substring(0,15), colX[1], y+4);
+        doc.text(r.asignatura.substring(0,25), colX[2], y+4);
+        doc.text(r.acum, colX[3], y+4);
+        doc.text(r.corte, colX[4], y+4);
+        doc.text(r.necesaria, colX[5], y+4);
+        
+        // Color según estado
+        if(r.estado === 'IMPOSIBLE'){
+          doc.setTextColor(255,0,0);
+        } else if(r.estado === 'CRÍTICO'){
+          doc.setTextColor(255,140,0);
+        } else if(r.estado === 'DIFÍCIL'){
+          doc.setTextColor(255,165,0);
+        } else {
+          doc.setTextColor(0,128,0);
+        }
+        doc.text(r.estado, colX[6], y+4);
+        doc.setTextColor(0);
+        
+        y+=6; 
+        doc.setDrawColor(240); 
+        doc.line(10,y,pageW-10,y);
+      });
+      
+      // Agregar pie de página con fecha
+      const pageCount = doc.internal.getNumberOfPages();
+      for(let i = 1; i <= pageCount; i++){
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(128);
+        doc.text(`Página ${i} de ${pageCount}`, pageW/2, doc.internal.pageSize.getHeight() - 10, {align:'center'});
+        doc.text(`Generado: ${new Date().toLocaleString()}`, pageW - 15, doc.internal.pageSize.getHeight() - 10, {align:'right'});
+      }
+      
+      doc.save('notas_minimas_necesarias.pdf');
+    }
+
+    function buildNotasMinimasRows(){
+      const selGrado   = document.getElementById('filterGrado').value;
+      const selGrupo   = document.getElementById('filterGrupo').value;
+      const selAsig    = document.getElementById('filterAsignatura').value;
+      const selAcum    = document.getElementById('filterAcumulado').value;
+      const q          = (document.getElementById('filterEstudiante').value || '').toLowerCase();
+      const rows=[];
+      
+      analysisData.students.filter(st=>{
+        if(selGrado!=='all' && st.grade!==selGrado) return false;
+        if(selGrupo!=='all' && st.group!==selGrupo) return false;
+        if(q && !st.name.toLowerCase().includes(q)) return false; 
+        return true;
+      }).forEach(st=>{
+        Object.entries(st.minimumGrades||{}).forEach(([sub,data])=>{
+          if(!shouldIncludeSubject(sub)) return;
+          if(selAsig!=='all' && sub!==selAsig) return;
+          
+          const corteN = data.corteParcial || 60;
+          const currentN = data.current || 0;
+          if(selAcum==='>=60' && !(currentN>=corteN)) return;
+          if(selAcum==='<60' && !(currentN<corteN))  return;
+
+          const sd = st.subjects && st.subjects[sub];
+          const currentDisp = toDisplayValue(currentN, sd);
+          const corteDisp   = toDisplayValue(corteN, sd);
+          const neededDisp  = toDisplayValue(data.needed || 0, sd);
+          const maxVis      = getDisplayMaxForSubject(sd);
+          const status = data.needed>100 ? 'IMPOSIBLE' : (data.needed>85 ? 'CRÍTICO' : (data.needed>70) ? 'DIFÍCIL' : 'POSIBLE');
+
+          rows.push({
+            estudiante: st.name,
+            grupo: st.group,
+            asignatura: sub + ` (/${maxVis})`,
+            acum: `${currentDisp.toFixed(2)}`,
+            corte: `${corteDisp.toFixed(2)}`,
+            necesaria: `${neededDisp.toFixed(2)}`,
+            estado: status
+          });
+        });
+      });
+      return rows;
+    }
+
+    function exportDashboardAsignaturaPDF(){
+      const { jsPDF } = window.jspdf;
+      const selAsig  = document.getElementById('filterAsignatura').value;
+      const selGrado = document.getElementById('filterGrado').value;
+      const selGrupo = document.getElementById('filterGrupo').value;
+      const q        = (document.getElementById('filterEstudiante').value || '').toLowerCase();
+      const P        = analysisData.config.periodoActual;
+
+      if(selAsig==='all'){
+        alert('Selecciona una Asignatura en los filtros para exportar su dashboard.');
+        return;
+      }
+
+      const rows = [];
+      let sdExample = null;
+      const studentScores = []; // Para TOP 5
+      
+      analysisData.students.forEach(st=>{
+        if(selGrado!=='all' && st.grade!==selGrado) return;
+        if(selGrupo!=='all' && st.group!==selGrupo) return;
+        if(q && !st.name.toLowerCase().includes(q)) return;
+        const sd = st.subjects && st.subjects[selAsig];
+        if(!sd) return;
+        rows.push({ st, sd });
+        if(!sdExample) sdExample = sd;
+      });
+      
+      if(!rows.length){
+        alert('No hay datos que coincidan con los filtros para esta asignatura.');
+        return;
+      }
+
+      const maxVis = getDisplayMaxForSubject(sdExample);
+      let sumAcum=0, nAcum=0, aprobTot=0, reprobTot=0;
+      const porGrupo = new Map();
+      
+      rows.forEach(({st,sd})=>{
+        const puntos = (sd.puntosParciales!=null?sd.puntosParciales:(sd.acumulado||0));
+        const corte  = (sd.corteAprobacion!=null?sd.corteAprobacion:60*((sd.pesoParcial||0)/100));
+        if(isFinite(puntos)){ 
+          sumAcum+=puntos; 
+          nAcum++; 
+          // Agregar para TOP 5
+          studentScores.push({
+            name: st.name,
+            group: st.group,
+            score: puntos,
+            displayScore: toDisplayValue(puntos, sd)
+          });
+        }
+        if((sd.pesoParcial||0)>0){ if(puntos>=corte) aprobTot++; else reprobTot++; }
+        if(!porGrupo.has(st.group)) porGrupo.set(st.group,{n:0,sum:0,ap:0,rp:0});
+        const g = porGrupo.get(st.group);
+        g.n++;
+        if(isFinite(puntos)) g.sum+=puntos;
+        if((sd.pesoParcial||0)>0){ if(puntos>=corte) g.ap++; else g.rp++; }
+      });
+
+      // Obtener TOP 5
+      studentScores.sort((a,b) => b.score - a.score);
+      const top5 = studentScores.slice(0, 5);
+
+      const totalEst = rows.length;
+      const promGeneralVis = nAcum? toDisplayValue(sumAcum/nAcum, sdExample).toFixed(1) : '—';
+      const aprobPct = totalEst? ((aprobTot/totalEst)*100).toFixed(1) : '0.0';
+      const reprobPct = totalEst? ((reprobTot/totalEst)*100).toFixed(1) : '0.0';
+
+      const perStats = [];
+      for(let p=1;p<=P;p++){
+        let ap=0, rp=0, conDato=0;
+        rows.forEach(({sd})=>{
+          const val = sd.periods ? sd.periods[p] : null;
+          if(val==null) return;
+          conDato++;
+          if(val>=60) ap++; else rp++;
+        });
+        const pct = conDato? ((ap/conDato)*100).toFixed(1) : '0.0';
+        perStats.push({p, peso: analysisData.config.weights[p-1]||0, ap, rp, pct});
+      }
+
+      const riesgo = [];
+      rows.forEach(({st,sd})=>{
+        const puntos = (sd.puntosParciales!=null?sd.puntosParciales:(sd.acumulado||0));
+        const corte  = (sd.corteAprobacion!=null?sd.corteAprobacion:60*((sd.pesoParcial||0)/100));
+        if((sd.pesoParcial||0)>0 && puntos < corte){
+          const visAcum = toDisplayValue(puntos, sd).toFixed(1);
+          const pCols = [];
+          for(let i=1;i<=P;i++){
+            const v = sd.periods && isFinite(sd.periods[i]) ? toDisplayValue(sd.periods[i], sd).toFixed(1) : '—';
+            pCols.push(v);
+          }
+          riesgo.push({ nombre: st.name, grupo: st.group, acum: visAcum, pCols });
+        }
+      });
+
+      const doc = new jsPDF('p','mm','letter');
+      const pageW = doc.internal.pageSize.getWidth();
+
+      doc.setFillColor(45,55,72);
+      doc.rect(10,10,pageW-20,12,'F');
+      doc.setTextColor(255); 
+      doc.setFontSize(13);
+      doc.text(`Dashboard Asignatura: ${selAsig}`, pageW/2, 18, {align:'center'});
+      doc.setTextColor(0);
+
+      let y = 28;
+      doc.setFontSize(10);
+      const kpi = [
+        ['Total Estudiantes', String(totalEst)],
+        [`Promedio (/${maxVis})`, String(promGeneralVis)],
+        ['Aprobación', `${aprobPct}%`],
+        ['Reprobación', `${reprobPct}%`]
+      ];
+      const boxW = (pageW-20-9)/4, boxH=16;
+      kpi.forEach((pair,i)=>{
+        const x = 10 + i*(boxW+3);
+        doc.setDrawColor(220); 
+        doc.rect(x,y,boxW,boxH,'S');
+        doc.setFontSize(8); 
+        doc.text(pair[0], x+3, y+6);
+        doc.setFontSize(12); 
+        doc.text(pair[1], x+3, y+12);
+      });
+      y += boxH + 6;
+
+      // Agregar TOP 5 Mejores Estudiantes
+      if(top5.length > 0){
+        doc.setFontSize(11);
+        doc.setFont(undefined, 'bold');
+        doc.text('🏆 TOP 5 MEJORES ESTUDIANTES', 10, y);
+        doc.setFont(undefined, 'normal');
+        y += 6;
+        
+        const headTop5 = [['Ranking', 'Estudiante', 'Grupo', 'Nota']];
+        const bodyTop5 = top5.map((st, idx) => [
+          `${idx + 1}°`,
+          st.name,
+          st.group,
+          st.displayScore.toFixed(1)
+        ]);
+        
+        doc.autoTable({
+          head: headTop5,
+          body: bodyTop5,
+          startY: y,
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [255,193,7] },
+          columnStyles: {
+            0: { cellWidth: 20, halign: 'center' },
+            1: { cellWidth: 80 },
+            2: { cellWidth: 40 },
+            3: { cellWidth: 30, halign: 'center' }
+          },
+          margin: {left:10, right:10}
+        });
+        y = doc.lastAutoTable.finalY + 6;
+      }
+
+      const headGrupo = [['Grupo','Estudiantes','Promedio','Aprobados','% Aprob.','Reprobados','% Reprob.']];
+      const bodyGrupo = [...porGrupo.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([g,v])=>{
+        const avg = v.n? toDisplayValue(v.sum/v.n, sdExample).toFixed(1) : '—';
+        const pAp = v.n? ((v.ap/v.n)*100).toFixed(1)+'%' : '0%';
+        const pRp = v.n? ((v.rp/v.n)*100).toFixed(1)+'%' : '0%';
+        return [g, v.n, avg, v.ap, pAp, v.rp, pRp];
+      });
+
+      doc.autoTable({
+        head: headGrupo,
+        body: bodyGrupo,
+        startY: y,
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [49,130,206] },
+        margin: {left:10, right:10}
+      });
+      y = doc.lastAutoTable.finalY + 6;
+
+      const headPer = [['Período','Peso','Aprobados','Reprobados','% Aprobación']];
+      const bodyPer  = perStats.map(ps=>[`P${ps.p}`, `${ps.peso}%`, ps.ap, ps.rp, `${ps.pct}%`]);
+      doc.autoTable({
+        head: headPer,
+        body: bodyPer,
+        startY: y,
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [245,158,11] },
+        margin: {left:10, right:10}
+      });
+      y = doc.lastAutoTable.finalY + 6;
+
+      const headRisk = [['Estudiante','Grupo','Acumulado'].concat(Array.from({length:P},(_,i)=>`P${i+1}`))];
+      const bodyRisk = riesgo.map(r=>[r.nombre, r.grupo, r.acum, ...r.pCols]);
+      doc.autoTable({
+        head: headRisk,
+        body: bodyRisk,
+        startY: y,
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [229,62,62] },
+        margin: {left:10, right:10},
+        didDrawPage: (data)=>{
+          const str = `Generado: ${new Date().toLocaleString()}`;
+          doc.setFontSize(8);
+          doc.text(str, pageW-10, doc.internal.pageSize.getHeight()-6, {align:'right'});
+        }
+      });
+
+      doc.save(`dashboard_${selAsig.replace(/[\\/:*?"<>|]/g,'_')}.pdf`);
+    }
+
+    // ==================== Guardar / Cargar JSON =====================
+    function saveAnalysis(){
+      // Verificar si hay datos para guardar
+      if(analysisData.students.length === 0){
+        alert('⚠️ No hay análisis para guardar. Primero carga archivos Excel y realiza un análisis.');
+        return;
+      }
+      
+      // Capturar toda la configuración actual
+      const currentConfig = {
+        schoolName: document.getElementById('schoolName').value || '',
+        rangesScaleMax: parseFloat(document.getElementById('rangesScaleMax').value) || 5,
+        ranges: {
+          bajo: [
+            parseFloat(document.getElementById('rBMin').value),
+            parseFloat(document.getElementById('rBMax').value)
+          ],
+          basico: [
+            parseFloat(document.getElementById('rBaMin').value),
+            parseFloat(document.getElementById('rBaMax').value)
+          ],
+          alto: [
+            parseFloat(document.getElementById('rAMin').value),
+            parseFloat(document.getElementById('rAMax').value)
+          ],
+          superior: [
+            parseFloat(document.getElementById('rSMin').value),
+            parseFloat(document.getElementById('rSMax').value)
+          ]
+        },
+        numPeriodos: analysisData.config.numPeriodos,
+        periodoActual: analysisData.config.periodoActual,
+        weights: analysisData.config.weights,
+        scaleMode: analysisData.config.scaleMode,
+        customMax: analysisData.config.customMax,
+        excludedSubjects: analysisData.config.excludedSubjects
+      };
+      
+      const snapshot = {
+        ...analysisData,
+        subjects: Array.from(analysisData.subjects||[]),
+        grades: Array.from(analysisData.grades||[]),
+        groups: Array.from(analysisData.groups||[]),
+        config: currentConfig,
+        activeRanges: activeRanges // Guardar también los rangos activos
+      };
+      
+      const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+      const schoolNameForFile = currentConfig.schoolName ? `_${currentConfig.schoolName.replace(/\s+/g, '_')}` : '';
+      downloadJSON(snapshot, `analisis_academico${schoolNameForFile}_${stamp}.json`);
+    }
+    
+    function downloadJSON(obj, filename){
+      const blob = new Blob([JSON.stringify(obj,null,2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); 
+      a.href=url; 
+      a.download=filename; 
+      document.body.appendChild(a); 
+      a.click(); 
+      a.remove(); 
+      URL.revokeObjectURL(url);
+    }
+    
+    function handleLoadJSON(ev){
+      const file = ev.target.files[0]; 
+      if(!file) return; 
+      ev.target.value = '';
+      const reader = new FileReader();
+      reader.onload = (e)=>{
+        try{
+          const raw = JSON.parse(e.target.result);
+          
+          // Restaurar configuración del colegio si existe
+          if(raw.config){
+            // Restaurar nombre del colegio
+            if(raw.config.schoolName){
+              document.getElementById('schoolName').value = raw.config.schoolName;
+            }
+            
+            // Restaurar rangos de evaluación
+            if(raw.config.ranges){
+              document.getElementById('rangesScaleMax').value = raw.config.rangesScaleMax || 5;
+              document.getElementById('rBMin').value = raw.config.ranges.bajo[0];
+              document.getElementById('rBMax').value = raw.config.ranges.bajo[1];
+              document.getElementById('rBaMin').value = raw.config.ranges.basico[0];
+              document.getElementById('rBaMax').value = raw.config.ranges.basico[1];
+              document.getElementById('rAMin').value = raw.config.ranges.alto[0];
+              document.getElementById('rAMax').value = raw.config.ranges.alto[1];
+              document.getElementById('rSMin').value = raw.config.ranges.superior[0];
+              document.getElementById('rSMax').value = raw.config.ranges.superior[1];
+            }
+            
+            // Restaurar configuración de períodos
+            if(raw.config.numPeriodos){
+              document.getElementById('numPeriodos').value = raw.config.numPeriodos;
+              analysisData.config.numPeriodos = raw.config.numPeriodos;
+            }
+            
+            if(raw.config.periodoActual){
+              analysisData.config.periodoActual = raw.config.periodoActual;
+            }
+            
+            if(raw.config.weights){
+              analysisData.config.weights = raw.config.weights;
+            }
+            
+            if(raw.config.scaleMode){
+              analysisData.config.scaleMode = raw.config.scaleMode;
+              document.getElementById('scaleMode').value = raw.config.scaleMode;
+            }
+            
+            if(raw.config.customMax){
+              analysisData.config.customMax = raw.config.customMax;
+              document.getElementById('customMax').value = raw.config.customMax;
+            }
+            
+            // Actualizar la configuración visual
+            updateConfig();
+            
+            // Restaurar rangos activos
+            if(raw.activeRanges){
+              activeRanges = raw.activeRanges;
+            } else if(raw.config.ranges){
+              // Si no hay rangos activos guardados, crearlos desde la configuración
+              activeRanges = {
+                escalaMax: raw.config.rangesScaleMax || 5,
+                bajo: raw.config.ranges.bajo,
+                basico: raw.config.ranges.basico,
+                alto: raw.config.ranges.alto,
+                superior: raw.config.ranges.superior
+              };
+            }
+          }
+          
+          // Cargar los datos del análisis
+          migrateAndLoad(raw);
+          
+          // Si se cargó exitosamente, actualizar la UI
+          if(analysisData.students.length > 0){
+            // Mostrar sección de resultados y ocultar carga
+            document.getElementById('resultsSection').style.display='block';
+            document.getElementById('uploadSection').style.display='none';
+            
+            populateFilters();
+            applyFilters();
+            
+            const schoolMsg = raw.config && raw.config.schoolName ? 
+              ` - Colegio: ${raw.config.schoolName}` : '';
+            alert('✅ Análisis cargado correctamente' + schoolMsg + '\n' +
+                  'Total de estudiantes: ' + analysisData.students.length + '\n' +
+                  'Períodos: ' + analysisData.config.numPeriodos + '\n' +
+                  'Pesos: ' + analysisData.config.weights.join('%, ') + '%');
+          } else {
+            alert('⚠️ El archivo no contiene datos de análisis válidos.');
+          }
+        }catch(err){ 
+          alert('❌ Error al cargar el archivo: ' + err.message); 
+        }
+      };
+      reader.readAsText(file);
+    }
+    
+    function migrateAndLoad(raw){
+      analysisData = {
+        students: raw.students || [],
+        subjects: new Set(Array.isArray(raw.subjects)?raw.subjects:Array.from(raw.subjects||[])),
+        grades: new Set(Array.isArray(raw.grades)?raw.grades:Array.from(raw.grades||[])),
+        groups: new Set(Array.isArray(raw.groups)?raw.groups:Array.from(raw.groups||[])),
+        byDesempeno: {},
+        bySubject: {},
+        studentsInBajo: [],
+        config: { ...analysisData.config, ...(raw.config||{}) },
+        version: raw.version || '1.5.0'
+      };
+      
+      // Cargar asignaturas excluidas
+      if(analysisData.config.excludedSubjects){
+        excludedSubjects = new Set(analysisData.config.excludedSubjects);
+      }
+      
+      populateSubjectsConfig(); // Mostrar configuración
+      recomputeWithConfig();
+      analyzePerformance();
+    }
+
+    // ==================== Miscelánea =====================
+    function resetAnalysis(){ 
+      if(confirm('¿Desea realizar un nuevo análisis?')) location.reload(); 
+    }
+  </script>
+</body>
+</html>
